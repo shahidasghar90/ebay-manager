@@ -10,6 +10,12 @@ const SHEETS = {
 };
 
 const IMAGE_FOLDER_NAME = 'eBay_Product_Images';
+const SPREADSHEET_ID = '1SwmWtTn0KQlqYwv5maPzTggGliK3EFHqZCORkAT8rSU';
+
+function getSpreadsheet_() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  return active || SpreadsheetApp.openById(SPREADSHEET_ID);
+}
 
 function doGet() {
   return HtmlService
@@ -232,7 +238,7 @@ function testReadInventory() {
 }
 
 function debugAppData() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet_();
 
   const result = {
     spreadsheetName: ss.getName(),
@@ -612,9 +618,7 @@ function getSettings() {
 ========================= */
 
 function getSheet_(name) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(name);
+  const sheet = getSpreadsheet_().getSheetByName(name);
 
   if (!sheet) {
     throw new Error(`Sheet not found: ${name}`);
