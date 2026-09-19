@@ -254,7 +254,22 @@
 
                 <label>
                   Category
-                  <input name="category" placeholder="e.g. Audio, Cables, Tools">
+                  <input name="category" list="categoryOptions" placeholder="Select or type a new category" autocomplete="off">
+                  <datalist id="categoryOptions">
+                    <option value="Electronics">
+                    <option value="Audio">
+                    <option value="Cables">
+                    <option value="Computer Parts">
+                    <option value="Mobile Accessories">
+                    <option value="Home & Garden">
+                    <option value="Kitchen">
+                    <option value="Tools">
+                    <option value="Toys">
+                    <option value="Clothing">
+                    <option value="Sports & Outdoors">
+                    <option value="Automotive">
+                    <option value="Other">
+                  </datalist>
                 </label>
 
                 <label>

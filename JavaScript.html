@@ -368,6 +368,7 @@
         renderAccounts();
         renderReturns();
         renderResearch();
+        renderCategoryOptions();
         updateProfitPreview();
         showToast('Data refreshed.');
       })
@@ -711,6 +712,23 @@
         <td>${statusBadge(item['Reorder Alert'])}</td>
       </tr>
     `).join('');
+  }
+
+  function renderCategoryOptions() {
+    const datalist = document.getElementById('categoryOptions');
+    const existing = new Set(
+      Array.from(datalist.options).map(option => option.value)
+    );
+
+    (appData.products || [])
+      .map(product => String(product['Category'] || '').trim())
+      .filter(category => category && !existing.has(category))
+      .forEach(category => {
+        existing.add(category);
+        const option = document.createElement('option');
+        option.value = category;
+        datalist.appendChild(option);
+      });
   }
 
   function renderResearch() {
