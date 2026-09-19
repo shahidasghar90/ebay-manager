@@ -61,11 +61,21 @@
         return;
       }
 
-      selected.slice(0, remaining).forEach(file => uploadOneProductImage(file, form));
+      uploadProductImagesSequentially(selected.slice(0, remaining), form);
     });
   }
 
-  function uploadOneProductImage(file, form) {
+  function uploadProductImagesSequentially(files, form) {
+    if (!files.length) return;
+
+    const [next, ...rest] = files;
+
+    uploadOneProductImage(next, form, () => {
+      uploadProductImagesSequentially(rest, form);
+    });
+  }
+
+  function uploadOneProductImage(file, form, onDone) {
     const reader = new FileReader();
 
     reader.onload = () => {
@@ -78,10 +88,12 @@
           renderImageGallery();
           setImageUploadingState(false);
           showToast('Image uploaded to Drive.');
+          if (onDone) onDone();
         })
         .withFailureHandler(error => {
           setImageUploadingState(false);
           showToast(error.message || 'Image upload failed.', true);
+          if (onDone) onDone();
         })
         .uploadImageToDrive(
           reader.result,

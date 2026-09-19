@@ -4,7 +4,7 @@
 
 const MAX_PRODUCT_IMAGES = 5;
 
-function uploadImageToDrive(base64Data, filename, sku, condition, category) {
+function uploadImageToDrive(base64Data, filename, productName, condition, category) {
   if (!base64Data) {
     throw new Error('No image data provided.');
   }
@@ -19,10 +19,10 @@ function uploadImageToDrive(base64Data, filename, sku, condition, category) {
   const blob = Utilities.newBlob(
     bytes,
     mimeType,
-    (sku || 'product') + '_' + (filename || 'image.jpg')
+    (productName || 'product') + '_' + (filename || 'image.jpg')
   );
 
-  const folder = getImageFolder_(condition, category);
+  const folder = getImageFolder_(condition, category, productName);
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
@@ -35,10 +35,18 @@ function uploadImageToDrive(base64Data, filename, sku, condition, category) {
   };
 }
 
-function getImageFolder_(condition, category) {
-  const root = getOrCreateChildFolder_(DriveApp.getRootFolder(), IMAGE_FOLDER_NAME);
-  const conditionFolder = getOrCreateChildFolder_(root, sanitizeFolderName_(condition));
-  return getOrCreateChildFolder_(conditionFolder, sanitizeFolderName_(category));
+function getImageFolder_(condition, category, productName) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const root = getOrCreateChildFolder_(DriveApp.getRootFolder(), IMAGE_FOLDER_NAME);
+    const conditionFolder = getOrCreateChildFolder_(root, sanitizeFolderName_(condition));
+    const categoryFolder = getOrCreateChildFolder_(conditionFolder, sanitizeFolderName_(category));
+    return getOrCreateChildFolder_(categoryFolder, sanitizeFolderName_(productName));
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getOrCreateChildFolder_(parent, name) {
