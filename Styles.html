@@ -515,7 +515,7 @@
   .modal-box {
     background: #fff;
     border-radius: 12px;
-    max-width: 640px;
+    max-width: 760px;
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
@@ -535,15 +535,30 @@
 
   .modal-body {
     padding: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .modal-body img {
-    grid-column: 1 / -1;
     max-width: 220px;
     border-radius: 8px;
+  }
+
+  .modal-section h4 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .modal-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
   }
 
   .modal-field span {

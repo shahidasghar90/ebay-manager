@@ -622,23 +622,83 @@
     if (!product) return;
 
     const body = document.getElementById('productModalBody');
-    const fields = [
-      ['Category', product['Category']],
-      ['Condition', product['Condition']],
-      ['Business Model', product['Business Model']],
-      ['Status', product['Product Status']],
-      ['Platform', product['Sales Platform']],
-      ['Supplier', product['Supplier Name']],
-      ['Supplier Platform', product['Supplier Platform']],
-      ['Currency', product['Source Currency']],
-      ['Total Cost', formatMoney(product['Total Cost EUR'])],
-      ['Sale Price', formatMoney(product['Current Sale Price EUR'])],
-      ['Recommended Price', formatMoney(product['Recommended Sale Price EUR'])],
-      ['Net Profit', formatMoney(product['Estimated Net Profit EUR'])],
-      ['Margin', (Number(product['Estimated Profit Margin %'] || 0) * 100).toFixed(1) + '%'],
-      ['Supplier Link', product['Supplier Link'], true],
-      ['Listing Link', product['Main eBay Listing URL'], true],
-      ['Notes', product['Notes']]
+    const pct = value => (Number(value || 0) * 100).toFixed(1) + '%';
+
+    const sections = [
+      {
+        title: 'Overview',
+        fields: [
+          ['SKU', product['SKU']],
+          ['Category', product['Category']],
+          ['Condition', product['Condition']],
+          ['Business Model', product['Business Model']],
+          ['Status', product['Product Status']],
+          ['Platform', product['Sales Platform']]
+        ]
+      },
+      {
+        title: 'Pricing & Profit Analysis',
+        fields: [
+          ['Total Cost', formatMoney(product['Total Cost EUR'])],
+          ['Minimum (Breakeven) Price', formatMoney(product['Minimum Sale Price EUR'])],
+          ['Recommended Price', formatMoney(product['Recommended Sale Price EUR'])],
+          ['Current Sale Price', formatMoney(product['Current Sale Price EUR'])],
+          ['Target Profit %', pct(product['Target Profit %'])],
+          ['Estimated Net Profit', formatMoney(product['Estimated Net Profit EUR'])],
+          ['Estimated Margin', pct(product['Estimated Profit Margin %'])]
+        ]
+      },
+      {
+        title: 'Cost Breakdown',
+        fields: [
+          ['Source Currency', product['Source Currency']],
+          ['FX Rate to EUR', product['FX Rate to EUR']],
+          ['Purchase Price', formatMoney(product['Purchase Price EUR'])],
+          ['Shipping to You', formatMoney(product['Shipping to You EUR'])],
+          ['Customs/Duty', formatMoney(product['Customs/Duty EUR'])],
+          ['Packaging', formatMoney(product['Packaging EUR'])],
+          ['Refurbishment', formatMoney(product['Refurbishment EUR'])],
+          ['Dropship Customer Shipping', formatMoney(product['Dropship Customer Shipping EUR'])],
+          ['Dropship Handling Fee', formatMoney(product['Dropship Handling Fee EUR'])]
+        ]
+      },
+      {
+        title: 'Fees',
+        fields: [
+          ['eBay Fee %', pct(product['eBay Fee %'])],
+          ['Estimated eBay Fee', formatMoney(product['Estimated eBay Fee EUR'])],
+          ['Payment Fee %', pct(product['Payment Fee %'])],
+          ['Fixed Payment Fee', formatMoney(product['Fixed Payment Fee EUR'])],
+          ['Estimated Payment Fee', formatMoney(product['Estimated Payment Fee EUR'])]
+        ]
+      },
+      {
+        title: 'Supplier & Logistics',
+        fields: [
+          ['Supplier Name', product['Supplier Name']],
+          ['Supplier Platform', product['Supplier Platform']],
+          ['Supplier MOQ', product['Supplier MOQ']],
+          ['Lead Time (days)', product['Lead Time Days']],
+          ['Dropship Supported', product['Dropship Supported']],
+          ['Acquisition Source', product['Acquisition Source']],
+          ['Acquisition Date', String(product['Acquisition Date'] || '').substring(0, 10)]
+        ]
+      },
+      {
+        title: 'Links',
+        fields: [
+          ['Supplier Link', product['Supplier Link'], true],
+          ['Listing Link', product['Main eBay Listing URL'], true],
+          ['Image URL', product['Image URL'], true],
+          ['Support Link 1', product['Support Link 1'], true],
+          ['Support Link 2', product['Support Link 2'], true],
+          ['Support Link 3', product['Support Link 3'], true]
+        ]
+      },
+      {
+        title: 'Notes',
+        fields: [['Notes', product['Notes']]]
+      }
     ];
 
     body.innerHTML = `
@@ -647,14 +707,21 @@
           ? `<img src="${escapeHtml(product['Image URL'])}" alt="" onclick="window.open('${escapeHtml(product['Image URL'])}', '_blank')" style="cursor:pointer">`
           : ''
       }
-      ${fields.map(([label, value, isLink]) => `
-        <div class="modal-field">
-          <span>${escapeHtml(label)}</span>
-          <strong>${
-            isLink && value
-              ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">${escapeHtml(value)}</a>`
-              : escapeHtml(value || '—')
-          }</strong>
+      ${sections.map(section => `
+        <div class="modal-section">
+          <h4>${escapeHtml(section.title)}</h4>
+          <div class="modal-section-grid">
+            ${section.fields.map(([label, value, isLink]) => `
+              <div class="modal-field">
+                <span>${escapeHtml(label)}</span>
+                <strong>${
+                  isLink && value
+                    ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">${escapeHtml(value)}</a>`
+                    : escapeHtml(value || '—')
+                }</strong>
+              </div>
+            `).join('')}
+          </div>
         </div>
       `).join('')}
     `;
