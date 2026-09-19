@@ -369,6 +369,7 @@
                 <label>
                   Customs / Duty (EUR)
                   <input type="number" name="customsDutyEur" min="0" step="0.01">
+                  <small class="field-hint">Leave 0 for local/domestic suppliers (Kleinanzeigen, local pickup) — only applies to international imports.</small>
                 </label>
 
                 <label>
@@ -376,19 +377,22 @@
                   <input type="number" name="packagingEur" min="0" step="0.01">
                 </label>
 
-                <label>
+                <label id="fieldRefurbishment" class="conditional-field">
                   Refurbishment Cost (EUR)
                   <input type="number" name="refurbishmentEur" min="0" step="0.01">
+                  <small class="field-hint">Only applies when Condition is Refurbished.</small>
                 </label>
 
-                <label>
+                <label id="fieldDropshipShipping" class="conditional-field">
                   Dropship Customer Shipping (EUR)
                   <input type="number" name="dropshipCustomerShippingEur" min="0" step="0.01">
+                  <small class="field-hint">Only applies to Dropship/Hybrid items.</small>
                 </label>
 
-                <label>
+                <label id="fieldDropshipHandling" class="conditional-field">
                   Dropship Handling Fee (EUR)
                   <input type="number" name="dropshipHandlingFeeEur" min="0" step="0.01">
+                  <small class="field-hint">Only applies to Dropship/Hybrid items.</small>
                 </label>
 
                 <label>
@@ -409,14 +413,16 @@
                 <label>
                   Supplier MOQ
                   <input type="number" name="supplierMoq" min="1" step="1" value="1">
+                  <small class="field-hint">Bulk import suppliers only — leave at 1 for a single local/used purchase.</small>
                 </label>
 
                 <label>
                   Lead Time (days)
                   <input type="number" name="leadTimeDays" min="0" step="1">
+                  <small class="field-hint">Shipping/production time from supplier — usually 0 for local pickup.</small>
                 </label>
 
-                <label>
+                <label id="fieldDropshipSupported" class="conditional-field">
                   Dropship Supported?
                   <select name="dropshipSupported">
                     <option value="No">No</option>

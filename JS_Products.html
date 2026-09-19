@@ -125,7 +125,23 @@
       }
     });
 
+    form.querySelector('[name="condition"]').addEventListener('change', updateConditionalFields);
+    form.querySelector('[name="businessModel"]').addEventListener('change', updateConditionalFields);
+
+    updateConditionalFields();
     updateProfitPreview();
+  }
+
+  function updateConditionalFields() {
+    const form = document.getElementById('productForm');
+    const condition = form.querySelector('[name="condition"]').value;
+    const businessModel = form.querySelector('[name="businessModel"]').value;
+    const isDropship = businessModel === 'Dropship' || businessModel === 'Hybrid';
+
+    document.getElementById('fieldRefurbishment').classList.toggle('hidden', condition !== 'Refurbished');
+    document.getElementById('fieldDropshipShipping').classList.toggle('hidden', !isDropship);
+    document.getElementById('fieldDropshipHandling').classList.toggle('hidden', !isDropship);
+    document.getElementById('fieldDropshipSupported').classList.toggle('hidden', !isDropship);
   }
 
   function updateProfitPreview() {
@@ -306,6 +322,7 @@
     document.getElementById('productFormTitle').textContent = `Edit Product — ${sku}`;
     form.querySelector('button[type="submit"]').textContent = 'Update Product';
 
+    updateConditionalFields();
     updateProfitPreview();
   }
 
@@ -319,6 +336,7 @@
     document.getElementById('productFormTitle').textContent = 'Add Product';
     form.querySelector('button[type="submit"]').textContent = 'Save Product';
 
+    updateConditionalFields();
     updateProfitPreview();
   }
 
