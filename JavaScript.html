@@ -27,6 +27,7 @@
   };
 
   let editingProductSku = null;
+  let imageUploading = false;
 
   document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
@@ -77,6 +78,11 @@
   function setupForms() {
     document.getElementById('productForm').addEventListener('submit', event => {
       event.preventDefault();
+
+      if (imageUploading) {
+        showToast('Image is still uploading, please wait a moment and try again.', true);
+        return;
+      }
 
       const isEditing = !!editingProductSku;
       const button = event.target.querySelector('button[type="submit"]');
@@ -224,13 +230,25 @@
         preview.src = reader.result;
         preview.classList.add('show');
 
+        imageUploading = true;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalLabel = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Uploading image...';
+
         google.script.run
           .withSuccessHandler(result => {
             form.querySelector('input[name="imageUrl"]').value = result.url;
             form.querySelector('input[name="imageFileId"]').value = result.fileId;
+            imageUploading = false;
+            submitButton.disabled = false;
+            submitButton.textContent = originalLabel;
             showToast('Image uploaded to Drive.');
           })
           .withFailureHandler(error => {
+            imageUploading = false;
+            submitButton.disabled = false;
+            submitButton.textContent = originalLabel;
             showToast(error.message || 'Image upload failed.', true);
           })
           .uploadImageToDrive(
