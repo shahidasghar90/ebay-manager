@@ -48,9 +48,9 @@
         });
 
       if (isEditing) {
-        run.updateOrder(formToObject(form));
+        run.updateOrder(formToObject(form), appPassword);
       } else {
-        run.saveOrder(formToObject(form));
+        run.saveOrder(formToObject(form), appPassword);
       }
     });
   }

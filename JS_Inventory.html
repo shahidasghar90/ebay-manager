@@ -12,7 +12,7 @@
         .withFailureHandler(error => {
           showToast(error.message || 'Could not save inventory.', true);
         })
-        .saveInventoryItem(formToObject(event.target));
+        .saveInventoryItem(formToObject(event.target), appPassword);
     });
   }
 

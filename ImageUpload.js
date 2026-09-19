@@ -4,7 +4,9 @@
 
 const MAX_PRODUCT_IMAGES = 5;
 
-function uploadImageToDrive(base64Data, filename, productName, condition, category) {
+function uploadImageToDrive(base64Data, filename, productName, condition, category, password) {
+  verifyAppPassword_(password);
+
   if (!base64Data) {
     throw new Error('No image data provided.');
   }

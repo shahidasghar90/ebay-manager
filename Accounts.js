@@ -2,7 +2,8 @@
    ACCOUNTS
 ========================= */
 
-function saveAccountTx(tx) {
+function saveAccountTx(tx, password) {
+  if (password !== undefined) verifyAppPassword_(password);
   validateRequired_(tx, ['type', 'category', 'amountEur', 'direction']);
 
   const sheet = getSheet_(SHEETS.ACCOUNTS);

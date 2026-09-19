@@ -2,7 +2,8 @@
    ORDERS
 ========================= */
 
-function saveOrder(order) {
+function saveOrder(order, password) {
+  verifyAppPassword_(password);
   validateRequired_(order, [
     'orderDate',
     'salesPlatform',
@@ -35,7 +36,8 @@ function saveOrder(order) {
   };
 }
 
-function updateOrder(order) {
+function updateOrder(order, password) {
+  verifyAppPassword_(password);
   validateRequired_(order, [
     'orderId',
     'orderDate',

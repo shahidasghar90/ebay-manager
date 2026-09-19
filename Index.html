@@ -6,6 +6,25 @@
   </head>
 
   <body>
+    <div id="loginOverlay" class="modal-overlay">
+      <div class="modal-box" style="max-width: 360px;">
+        <div class="modal-header">
+          <h3>Sign in</h3>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <label>
+              Password
+              <input type="password" name="password" required autofocus>
+            </label>
+            <div class="form-footer">
+              <button type="submit" class="primary-btn">Unlock</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div class="app-shell">
       <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
 

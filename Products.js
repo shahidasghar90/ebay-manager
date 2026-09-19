@@ -2,7 +2,8 @@
    PRODUCTS
 ========================= */
 
-function saveProduct(product) {
+function saveProduct(product, password) {
+  verifyAppPassword_(password);
   validateRequired_(product, [
     'productName',
     'condition',
@@ -35,7 +36,8 @@ function saveProduct(product) {
   };
 }
 
-function updateProduct(product) {
+function updateProduct(product, password) {
+  verifyAppPassword_(password);
   validateRequired_(product, [
     'sku',
     'productName',
@@ -179,7 +181,8 @@ function getProducts() {
   return getSheetObjects_(SHEETS.PRODUCTS);
 }
 
-function archiveProduct(sku) {
+function archiveProduct(sku, password) {
+  verifyAppPassword_(password);
   validateRequired_({ sku: sku }, ['sku']);
 
   const sheet = getSheet_(SHEETS.PRODUCTS);

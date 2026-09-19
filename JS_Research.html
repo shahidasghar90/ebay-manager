@@ -12,7 +12,7 @@
         .withFailureHandler(error => {
           showToast(error.message || 'Could not save research.', true);
         })
-        .saveResearch(formToObject(event.target));
+        .saveResearch(formToObject(event.target), appPassword);
     });
   }
 

@@ -2,7 +2,8 @@
    RESEARCH
 ========================= */
 
-function saveResearch(research) {
+function saveResearch(research, password) {
+  verifyAppPassword_(password);
   validateRequired_(research, ['keyword', 'potentialModel', 'currency']);
 
   const sheet = getSheet_(SHEETS.RESEARCH);

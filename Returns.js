@@ -2,7 +2,8 @@
    RETURNS
 ========================= */
 
-function saveReturnCase(item) {
+function saveReturnCase(item, password) {
+  verifyAppPassword_(password);
   validateRequired_(item, ['orderId', 'reason']);
 
   const sheet = getSheet_(SHEETS.RETURNS);

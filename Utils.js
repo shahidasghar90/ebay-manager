@@ -179,6 +179,29 @@ function validateRequired_(data, fields) {
   }
 }
 
+function verifyAppPassword_(password) {
+  const expected = PropertiesService.getScriptProperties().getProperty('APP_PASSWORD');
+
+  if (!expected) {
+    throw new Error(
+      'App password not set up yet. Run setAppPassword_ once from the Apps Script editor.'
+    );
+  }
+
+  if (password !== expected) {
+    throw new Error('Incorrect password.');
+  }
+}
+
+function setAppPassword_(newPassword) {
+  PropertiesService.getScriptProperties().setProperty('APP_PASSWORD', newPassword);
+}
+
+function checkLogin(password) {
+  verifyAppPassword_(password);
+  return { success: true };
+}
+
 function recordAutoAccountEntry_(entry) {
   if (!(entry.amountEur > 0)) return;
 

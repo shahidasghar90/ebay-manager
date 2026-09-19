@@ -17,7 +17,7 @@
           showToast(error.message || 'Could not save transaction.', true);
           button.disabled = false;
         })
-        .saveAccountTx(formToObject(event.target));
+        .saveAccountTx(formToObject(event.target), appPassword);
     });
   }
 

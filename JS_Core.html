@@ -29,8 +29,66 @@
   let editingProductSku = null;
   let imageUploadCount = 0;
   let currentImages = [];
+  let appPassword = '';
 
   document.addEventListener('DOMContentLoaded', () => {
+    setupLoginForm();
+  });
+
+  function setupLoginForm() {
+    document.getElementById('loginForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Checking...';
+
+      appPassword = event.target.querySelector('[name="password"]').value;
+
+      google.script.run
+        .withSuccessHandler(() => {
+          try {
+            sessionStorage.setItem('appPassword', appPassword);
+          } catch (error) {
+            // sessionStorage unavailable - login will be asked again on refresh
+          }
+
+          document.getElementById('loginOverlay').classList.add('hidden');
+          initializeApp();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Incorrect password.', true);
+          appPassword = '';
+          button.disabled = false;
+          button.textContent = 'Unlock';
+        })
+        .checkLogin(appPassword);
+    });
+
+    let storedPassword = '';
+
+    try {
+      storedPassword = sessionStorage.getItem('appPassword') || '';
+    } catch (error) {
+      storedPassword = '';
+    }
+
+    if (storedPassword) {
+      appPassword = storedPassword;
+
+      google.script.run
+        .withSuccessHandler(() => {
+          document.getElementById('loginOverlay').classList.add('hidden');
+          initializeApp();
+        })
+        .withFailureHandler(() => {
+          appPassword = '';
+        })
+        .checkLogin(appPassword);
+    }
+  }
+
+  function initializeApp() {
     setupNavigation();
     setupProductForm();
     setupOrderForm();
@@ -42,7 +100,7 @@
     setupProfitPreview();
     loadAppData();
     restoreLastPage();
-  });
+  }
 
   function restoreLastPage() {
     try {
@@ -125,7 +183,7 @@
       .withFailureHandler(error => {
         showToast(error.message || 'Could not load sheet data.', true);
       })
-      .getAppData();
+      .getAppData(appPassword);
   }
 
   function showPage(pageName) {

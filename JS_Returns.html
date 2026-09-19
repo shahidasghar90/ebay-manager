@@ -17,7 +17,7 @@
           showToast(error.message || 'Could not save return case.', true);
           button.disabled = false;
         })
-        .saveReturnCase(formToObject(event.target));
+        .saveReturnCase(formToObject(event.target), appPassword);
     });
   }
 

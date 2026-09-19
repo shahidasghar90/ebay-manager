@@ -2,7 +2,8 @@
    INVENTORY
 ========================= */
 
-function saveInventoryItem(item) {
+function saveInventoryItem(item, password) {
+  verifyAppPassword_(password);
   validateRequired_(item, ['sku', 'productName', 'inventoryType']);
 
   const sheet = getSheet_(SHEETS.INVENTORY);
