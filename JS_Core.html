@@ -61,8 +61,13 @@
         const page = button.dataset.page || button.dataset.go;
         if (page === 'add-product') resetProductFormForAdd();
         showPage(page);
+        closeSidebar();
       });
     });
+
+    document.getElementById('hamburgerButton').addEventListener('click', openSidebar);
+    document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+    document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
 
     document.getElementById('quickAddButton').addEventListener('click', () => {
       resetProductFormForAdd();
@@ -87,6 +92,16 @@
     document.getElementById('productModal').addEventListener('click', event => {
       if (event.target.id === 'productModal') closeProductModal();
     });
+  }
+
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarBackdrop').classList.remove('hidden');
+  }
+
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.add('hidden');
   }
 
   function loadAppData() {

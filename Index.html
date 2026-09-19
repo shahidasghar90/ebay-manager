@@ -7,13 +7,16 @@
 
   <body>
     <div class="app-shell">
-      <aside class="sidebar">
+      <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+
+      <aside class="sidebar" id="sidebar">
         <div class="brand">
           <div class="brand-icon">e</div>
           <div>
             <h1>eBay Manager</h1>
             <p>Business Console</p>
           </div>
+          <button class="sidebar-close" id="sidebarClose">✕</button>
         </div>
 
         <nav class="menu">
@@ -51,9 +54,12 @@
 
       <main class="main-content">
         <header class="topbar">
-          <div>
-            <h2 id="pageTitle">Dashboard</h2>
-            <p id="pageSubtitle">Your eBay business overview</p>
+          <div class="topbar-title">
+            <button class="hamburger-btn" id="hamburgerButton" aria-label="Open menu">☰</button>
+            <div>
+              <h2 id="pageTitle">Dashboard</h2>
+              <p id="pageSubtitle">Your eBay business overview</p>
+            </div>
           </div>
 
           <div class="topbar-actions">
