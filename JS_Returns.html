@@ -1,0 +1,48 @@
+<script>
+  function setupReturnsForm() {
+    document.getElementById('returnsForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Return case saved: ${result.caseId}`);
+          event.target.reset();
+          button.disabled = false;
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save return case.', true);
+          button.disabled = false;
+        })
+        .saveReturnCase(formToObject(event.target));
+    });
+  }
+
+  function renderReturns() {
+    const body = document.getElementById('returnsTable');
+    const returns = appData.returns || [];
+
+    if (!returns.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No return cases recorded.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = returns.map(item => `
+      <tr>
+        <td>${escapeHtml(item['Case ID'])}</td>
+        <td>${escapeHtml(item['Order ID'])}</td>
+        <td>${escapeHtml(item['Reason'])}</td>
+        <td>${statusBadge(item['Status'])}</td>
+        <td>${formatMoney(item['Refund EUR'])}</td>
+        <td>${formatMoney(item['Net Loss'])}</td>
+      </tr>
+    `).join('');
+  }
+</script>

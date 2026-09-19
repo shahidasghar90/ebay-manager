@@ -1,0 +1,56 @@
+<script>
+  function setupOrderForm() {
+    document.getElementById('orderForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(
+            `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
+          );
+          event.target.reset();
+          button.disabled = false;
+          button.textContent = 'Save Order';
+          document.getElementById('orderFormWrap').classList.add('hidden');
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save order.', true);
+          button.disabled = false;
+          button.textContent = 'Save Order';
+        })
+        .saveOrder(formToObject(event.target));
+    });
+  }
+
+  function renderOrders() {
+    const body = document.getElementById('ordersTable');
+    const orders = [...(appData.orders || [])]
+      .sort((a, b) => new Date(b['Order Date']) - new Date(a['Order Date']));
+
+    if (!orders.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty">No orders available.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = orders.map(order => `
+      <tr>
+        <td>${escapeHtml(order['Order ID'])}</td>
+        <td>${formatDate(order['Order Date'])}</td>
+        <td>${escapeHtml(order['SKU'])}</td>
+        <td>${escapeHtml(order['Buyer Username'])}</td>
+        <td>${formatMoney(order['Gross Sale EUR'])}</td>
+        <td>${formatMoney(order['Net Profit EUR'])}</td>
+        <td>${statusBadge(order['Order Status'])}</td>
+      </tr>
+    `).join('');
+  }
+</script>

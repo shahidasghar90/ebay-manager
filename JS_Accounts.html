@@ -1,0 +1,49 @@
+<script>
+  function setupAccountsForm() {
+    document.getElementById('accountsForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Transaction saved: ${result.txId}`);
+          event.target.reset();
+          button.disabled = false;
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save transaction.', true);
+          button.disabled = false;
+        })
+        .saveAccountTx(formToObject(event.target));
+    });
+  }
+
+  function renderAccounts() {
+    const body = document.getElementById('accountsTable');
+    const accounts = [...(appData.accounts || [])]
+      .sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
+    if (!accounts.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No transactions recorded.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = accounts.map(tx => `
+      <tr>
+        <td>${escapeHtml(tx['Tx ID'])}</td>
+        <td>${formatDate(tx['Date'])}</td>
+        <td>${escapeHtml(tx['Type'])}</td>
+        <td>${escapeHtml(tx['Category'])}</td>
+        <td>${formatMoney(tx['Amount EUR'])}</td>
+        <td>${statusBadge(tx['In/Out'])}</td>
+      </tr>
+    `).join('');
+  }
+</script>

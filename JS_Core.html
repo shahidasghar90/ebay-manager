@@ -1,0 +1,282 @@
+<script>
+  let appData = {
+    products: [],
+    orders: [],
+    inventory: [],
+    research: [],
+    accounts: [],
+    returns: [],
+    dashboard: {},
+    settings: {
+      fxRates: { EUR: 1, USD: 1, PKR: 1 },
+      ebayFeePercent: 0.129,
+      paymentFeePercent: 0.029,
+      fixedPaymentFeeEur: 0.35
+    }
+  };
+
+  const pageMeta = {
+    dashboard: ['Dashboard', 'Your eBay business overview'],
+    products: ['Products', 'Search, compare and manage your product catalogue'],
+    'add-product': ['Add Product', 'Create a product with pricing and profit calculation'],
+    orders: ['Orders', 'Manage eBay orders, fulfillment and profitability'],
+    research: ['Product Research', 'Save sourcing opportunities and product links'],
+    inventory: ['Inventory', 'Track stock, dropship items and reorder alerts'],
+    accounts: ['Accounts', 'Track income and expenses'],
+    returns: ['Returns', 'Manage return and refund cases']
+  };
+
+  let editingProductSku = null;
+  let imageUploading = false;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setupNavigation();
+    setupProductForm();
+    setupOrderForm();
+    setupResearchForm();
+    setupInventoryForm();
+    setupAccountsForm();
+    setupReturnsForm();
+    setupImageUpload();
+    setupProfitPreview();
+    loadAppData();
+    restoreLastPage();
+  });
+
+  function restoreLastPage() {
+    try {
+      const savedPage = localStorage.getItem('currentPage');
+      if (savedPage && pageMeta[savedPage]) {
+        showPage(savedPage);
+      }
+    } catch (error) {
+      // localStorage unavailable (private browsing etc.) - stay on default page
+    }
+  }
+
+  function setupNavigation() {
+    document.querySelectorAll('[data-page], [data-go]').forEach(button => {
+      button.addEventListener('click', () => {
+        const page = button.dataset.page || button.dataset.go;
+        if (page === 'add-product') resetProductFormForAdd();
+        showPage(page);
+      });
+    });
+
+    document.getElementById('quickAddButton').addEventListener('click', () => {
+      resetProductFormForAdd();
+      showPage('add-product');
+    });
+
+    document.getElementById('refreshButton').addEventListener('click', () => {
+      loadAppData();
+    });
+
+    document.getElementById('productSearch').addEventListener('input', event => {
+      renderProducts(event.target.value);
+    });
+
+    document.getElementById('showOrderForm').addEventListener('click', () => {
+      document.getElementById('orderFormWrap').classList.toggle('hidden');
+    });
+
+    ['filterStatus', 'filterCondition', 'filterModel', 'filterPlatform'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        renderProducts(document.getElementById('productSearch').value);
+      });
+    });
+
+    document.getElementById('closeProductModal').addEventListener('click', closeProductModal);
+    document.getElementById('productModal').addEventListener('click', event => {
+      if (event.target.id === 'productModal') closeProductModal();
+    });
+  }
+
+  function loadAppData() {
+    showToast('Refreshing data...');
+
+    google.script.run
+      .withSuccessHandler(data => {
+        appData = data;
+        renderDashboard();
+        renderProducts();
+        renderOrders();
+        renderInventory();
+        renderAccounts();
+        renderReturns();
+        renderResearch();
+        renderCategoryOptions();
+        updateProfitPreview();
+        showToast('Data refreshed.');
+      })
+      .withFailureHandler(error => {
+        showToast(error.message || 'Could not load sheet data.', true);
+      })
+      .getAppData();
+  }
+
+  function showPage(pageName) {
+    try {
+      localStorage.setItem('currentPage', pageName);
+    } catch (error) {
+      // localStorage unavailable - navigation still works, just won't persist
+    }
+
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    const pageId = pageName
+      .split('-')
+      .map((part, index) => index === 0
+        ? part
+        : part.charAt(0).toUpperCase() + part.slice(1)
+      )
+      .join('') + 'Page';
+
+    const page = document.getElementById(pageId);
+
+    if (page) {
+      page.classList.add('active');
+    }
+
+    const nav = document.querySelector(`[data-page="${pageName}"]`);
+
+    if (nav) {
+      nav.classList.add('active');
+    }
+
+    const meta = pageMeta[pageName] || ['eBay Manager', ''];
+    document.getElementById('pageTitle').textContent = meta[0];
+    document.getElementById('pageSubtitle').textContent = meta[1];
+  }
+
+  function renderDashboard() {
+    const d = appData.dashboard || {};
+
+    setText('totalProducts', d.totalProducts || 0);
+    setText('activeProducts', d.activeProducts || 0);
+    setText('ordersThisMonth', d.ordersThisMonth || 0);
+    setText('netProfitThisMonth', formatMoney(d.netProfitThisMonth || 0));
+    setText('lowStock', d.lowStock || 0);
+    setText('openReturns', d.openReturns || 0);
+
+    const container = document.getElementById('recentOrders');
+    const orders = [...(appData.orders || [])]
+      .sort((a, b) => new Date(b['Order Date']) - new Date(a['Order Date']))
+      .slice(0, 5);
+
+    if (!orders.length) {
+      container.innerHTML = '<div class="empty">No orders yet.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>SKU</th>
+              <th>Sale</th>
+              <th>Profit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map(order => `
+              <tr>
+                <td>${escapeHtml(order['Order ID'])}</td>
+                <td>${escapeHtml(order['SKU'])}</td>
+                <td>${formatMoney(order['Gross Sale EUR'])}</td>
+                <td>${formatMoney(order['Net Profit EUR'])}</td>
+                <td>${statusBadge(order['Order Status'])}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function formToObject(form) {
+    const data = {};
+
+    new FormData(form).forEach((value, key) => {
+      data[key] = value;
+    });
+
+    return data;
+  }
+
+  function setField(form, name, value) {
+    const field = form.querySelector(`[name="${name}"]`);
+    if (field && value !== undefined && value !== null && value !== '') {
+      field.value = value;
+    }
+  }
+
+  function num(value, defaultValue) {
+    const parsed = Number(value);
+    return isNaN(parsed) ? (defaultValue || 0) : parsed;
+  }
+
+  function setText(id, value) {
+    document.getElementById(id).textContent = value;
+  }
+
+  function formatMoney(value) {
+    const amount = Number(value || 0);
+
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  }
+
+  function formatDate(value) {
+    if (!value) return '—';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return new Intl.DateTimeFormat('de-DE').format(date);
+  }
+
+  function statusBadge(value) {
+    const text = value || '—';
+    const className = String(text)
+      .toLowerCase()
+      .replace(/\s+/g, '-');
+
+    return `<span class="status ${className}">${escapeHtml(text)}</span>`;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+
+    toast.textContent = message;
+    toast.classList.toggle('error', isError);
+    toast.classList.add('show');
+
+    window.clearTimeout(window.toastTimer);
+
+    window.toastTimer = window.setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+</script>

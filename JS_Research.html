@@ -1,0 +1,85 @@
+<script>
+  function setupResearchForm() {
+    document.getElementById('researchForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Research record saved: #${result.researchId}`);
+          event.target.reset();
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save research.', true);
+        })
+        .saveResearch(formToObject(event.target));
+    });
+  }
+
+  function renderResearch() {
+    const body = document.getElementById('researchTable');
+    const research = appData.research || [];
+
+    if (!research.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty">No research records yet.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = research.map(item => `
+      <tr>
+        <td>${escapeHtml(item['Keyword'])}</td>
+        <td>${escapeHtml(item['Potential Model'])}</td>
+        <td>${formatMoney(item['Product Price EUR'])}</td>
+        <td>${statusBadge(item['Research Status'])}</td>
+        <td>
+          <div class="action-buttons">
+            <button onclick="convertResearchToProduct('${escapeHtml(item['Research ID'])}')">Convert to Product</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function convertResearchToProduct(researchId) {
+    const item = (appData.research || []).find(
+      r => String(r['Research ID']) === String(researchId)
+    );
+
+    if (!item) return;
+
+    showPage('add-product');
+
+    const form = document.getElementById('productForm');
+    form.reset();
+    resetImagePreview();
+
+    setField(form, 'productName', item['Product Title'] || item['Keyword']);
+    setField(form, 'category', item['Category']);
+    setField(form, 'condition', item['Potential Model'] === 'Used' ? 'Used' : 'New');
+    setField(form, 'businessModel', item['Potential Model'] === 'Used' ? 'Stock' : item['Potential Model']);
+    setField(form, 'currency', item['Currency']);
+    setField(form, 'purchasePriceLocal', item['Product Price Local']);
+    setField(form, 'shippingToYouLocal', item['Shipping Local']);
+    setField(form, 'supplierLink', item['Main Listing URL']);
+    setField(form, 'supplierPlatform', item['Supplier Platform']);
+    setField(form, 'acquisitionSource', item['Seller/Supplier']);
+    setField(form, 'supplierMoq', item['MOQ']);
+    setField(form, 'leadTimeDays', item['Lead Time Days']);
+    setField(form, 'dropshipSupported', item['Dropship Available']);
+    setField(form, 'notes', item['Notes']);
+
+    if (item['Image URL']) {
+      setField(form, 'imageUrl', item['Image URL']);
+      const preview = document.getElementById('productImagePreview');
+      preview.src = item['Image URL'];
+      preview.classList.add('show');
+    }
+
+    updateProfitPreview();
+    showToast('Research pre-filled into Add Product form. Review and save.');
+  }
+</script>

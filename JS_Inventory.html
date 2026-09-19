@@ -1,0 +1,43 @@
+<script>
+  function setupInventoryForm() {
+    document.getElementById('inventoryForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      google.script.run
+        .withSuccessHandler(() => {
+          showToast('Inventory item saved.');
+          event.target.reset();
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save inventory.', true);
+        })
+        .saveInventoryItem(formToObject(event.target));
+    });
+  }
+
+  function renderInventory() {
+    const body = document.getElementById('inventoryTable');
+    const inventory = appData.inventory || [];
+
+    if (!inventory.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No inventory records available.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = inventory.map(item => `
+      <tr>
+        <td>${escapeHtml(item['SKU'])}</td>
+        <td>${escapeHtml(item['Product Name'])}</td>
+        <td>${escapeHtml(item['Inventory Type'])}</td>
+        <td>${escapeHtml(item['Quantity On Hand'])}</td>
+        <td>${escapeHtml(item['Available Quantity'])}</td>
+        <td>${statusBadge(item['Reorder Alert'])}</td>
+      </tr>
+    `).join('');
+  }
+</script>
