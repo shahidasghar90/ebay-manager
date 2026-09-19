@@ -34,16 +34,20 @@ function include(filename) {
 ========================= */
 
 function getAppData() {
-  return {
-    products: safeGetSheetObjects_(SHEETS.PRODUCTS),
-    orders: safeGetSheetObjects_(SHEETS.ORDERS),
-    inventory: safeGetSheetObjects_(SHEETS.INVENTORY),
-    research: safeGetSheetObjects_(SHEETS.RESEARCH),
-    accounts: safeGetSheetObjects_(SHEETS.ACCOUNTS),
-    returns: safeGetSheetObjects_(SHEETS.RETURNS),
-    dashboard: getDashboardData_(),
-    settings: getSettingsData_()
-  };
+  try {
+    return {
+      products: safeGetSheetObjects_(SHEETS.PRODUCTS),
+      orders: safeGetSheetObjects_(SHEETS.ORDERS),
+      inventory: safeGetSheetObjects_(SHEETS.INVENTORY),
+      research: safeGetSheetObjects_(SHEETS.RESEARCH),
+      accounts: safeGetSheetObjects_(SHEETS.ACCOUNTS),
+      returns: safeGetSheetObjects_(SHEETS.RETURNS),
+      dashboard: getDashboardData_(),
+      settings: getSettingsData_()
+    };
+  } catch (error) {
+    throw new Error('getAppData failed: ' + error.message);
+  }
 }
 
 function safeGetSheetObjects_(name) {
@@ -642,11 +646,27 @@ function getSheetObjects_(name) {
       const result = {};
 
       headers.forEach((header, index) => {
-        result[header] = row[index];
+        result[header] = sanitizeCellValue_(row[index]);
       });
 
       return result;
     });
+}
+
+function sanitizeCellValue_(value) {
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? '' : value.toISOString();
+  }
+
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'object') {
+    return String(value);
+  }
+
+  return value;
 }
 
 function getFxRate_(currency) {
