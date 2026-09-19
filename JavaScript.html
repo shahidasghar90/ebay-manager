@@ -1,0 +1,630 @@
+<script>
+  let appData = {
+    products: [],
+    orders: [],
+    inventory: [],
+    research: [],
+    accounts: [],
+    returns: [],
+    dashboard: {},
+    settings: {
+      fxRates: { EUR: 1, USD: 1, PKR: 1 },
+      ebayFeePercent: 0.129,
+      paymentFeePercent: 0.029,
+      fixedPaymentFeeEur: 0.35
+    }
+  };
+
+  const pageMeta = {
+    dashboard: ['Dashboard', 'Your eBay business overview'],
+    products: ['Products', 'Search, compare and manage your product catalogue'],
+    'add-product': ['Add Product', 'Create a product with pricing and profit calculation'],
+    orders: ['Orders', 'Manage eBay orders, fulfillment and profitability'],
+    research: ['Product Research', 'Save sourcing opportunities and product links'],
+    inventory: ['Inventory', 'Track stock, dropship items and reorder alerts'],
+    accounts: ['Accounts', 'Track income and expenses'],
+    returns: ['Returns', 'Manage return and refund cases']
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setupNavigation();
+    setupForms();
+    setupImageUpload();
+    setupProfitPreview();
+    loadAppData();
+  });
+
+  function setupNavigation() {
+    document.querySelectorAll('[data-page], [data-go]').forEach(button => {
+      button.addEventListener('click', () => {
+        const page = button.dataset.page || button.dataset.go;
+        showPage(page);
+      });
+    });
+
+    document.getElementById('quickAddButton').addEventListener('click', () => {
+      showPage('add-product');
+    });
+
+    document.getElementById('refreshButton').addEventListener('click', () => {
+      loadAppData();
+    });
+
+    document.getElementById('productSearch').addEventListener('input', event => {
+      renderProducts(event.target.value);
+    });
+
+    document.getElementById('showOrderForm').addEventListener('click', () => {
+      document.getElementById('orderFormWrap').classList.toggle('hidden');
+    });
+  }
+
+  function setupForms() {
+    document.getElementById('productForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(
+            `Product saved: ${result.sku}. Estimated profit: ${formatMoney(result.estimatedProfit)}`
+          );
+          event.target.reset();
+          resetImagePreview();
+          button.disabled = false;
+          button.textContent = 'Save Product';
+          loadAppData();
+          showPage('products');
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save product.', true);
+          button.disabled = false;
+          button.textContent = 'Save Product';
+        })
+        .saveProduct(formToObject(event.target));
+    });
+
+    document.getElementById('orderForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(
+            `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
+          );
+          event.target.reset();
+          button.disabled = false;
+          button.textContent = 'Save Order';
+          document.getElementById('orderFormWrap').classList.add('hidden');
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save order.', true);
+          button.disabled = false;
+          button.textContent = 'Save Order';
+        })
+        .saveOrder(formToObject(event.target));
+    });
+
+    document.getElementById('researchForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Research record saved: #${result.researchId}`);
+          event.target.reset();
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save research.', true);
+        })
+        .saveResearch(formToObject(event.target));
+    });
+
+    document.getElementById('inventoryForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      google.script.run
+        .withSuccessHandler(() => {
+          showToast('Inventory item saved.');
+          event.target.reset();
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save inventory.', true);
+        })
+        .saveInventoryItem(formToObject(event.target));
+    });
+
+    document.getElementById('accountsForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Transaction saved: ${result.txId}`);
+          event.target.reset();
+          button.disabled = false;
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save transaction.', true);
+          button.disabled = false;
+        })
+        .saveAccountTx(formToObject(event.target));
+    });
+
+    document.getElementById('returnsForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(result => {
+          showToast(`Return case saved: ${result.caseId}`);
+          event.target.reset();
+          button.disabled = false;
+          loadAppData();
+        })
+        .withFailureHandler(error => {
+          showToast(error.message || 'Could not save return case.', true);
+          button.disabled = false;
+        })
+        .saveReturnCase(formToObject(event.target));
+    });
+  }
+
+  /* =========================
+     IMAGE UPLOAD
+  ========================= */
+
+  function setupImageUpload() {
+    const fileInput = document.getElementById('productImageFile');
+    const preview = document.getElementById('productImagePreview');
+    const form = document.getElementById('productForm');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.classList.add('show');
+
+        google.script.run
+          .withSuccessHandler(result => {
+            form.querySelector('input[name="imageUrl"]').value = result.url;
+            form.querySelector('input[name="imageFileId"]').value = result.fileId;
+            showToast('Image uploaded to Drive.');
+          })
+          .withFailureHandler(error => {
+            showToast(error.message || 'Image upload failed.', true);
+          })
+          .uploadImageToDrive(
+            reader.result,
+            file.name,
+            form.querySelector('input[name="productName"]').value || 'product'
+          );
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function resetImagePreview() {
+    const preview = document.getElementById('productImagePreview');
+    preview.src = '';
+    preview.classList.remove('show');
+    document.getElementById('productImageFile').value = '';
+  }
+
+  /* =========================
+     LIVE PROFIT PREVIEW
+  ========================= */
+
+  function setupProfitPreview() {
+    const form = document.getElementById('productForm');
+    const watchedFields = [
+      'currency',
+      'purchasePriceLocal',
+      'shippingToYouLocal',
+      'customsDutyEur',
+      'packagingEur',
+      'refurbishmentEur',
+      'dropshipCustomerShippingEur',
+      'currentSalePriceEur',
+      'targetProfitPercent'
+    ];
+
+    watchedFields.forEach(name => {
+      const field = form.querySelector(`[name="${name}"]`);
+
+      if (field) {
+        field.addEventListener('input', updateProfitPreview);
+        field.addEventListener('change', updateProfitPreview);
+      }
+    });
+
+    updateProfitPreview();
+  }
+
+  function updateProfitPreview() {
+    const form = document.getElementById('productForm');
+    const data = formToObject(form);
+    const settings = appData.settings || {};
+    const fxRates = settings.fxRates || { EUR: 1, USD: 1, PKR: 1 };
+
+    const rate = fxRates[data.currency] || 1;
+    const purchaseEur = num(data.purchasePriceLocal) * rate;
+    const shippingEur = num(data.shippingToYouLocal) * rate;
+
+    const totalCost =
+      purchaseEur +
+      shippingEur +
+      num(data.customsDutyEur) +
+      num(data.packagingEur) +
+      num(data.refurbishmentEur) +
+      num(data.dropshipCustomerShippingEur);
+
+    const ebayFeePercent = settings.ebayFeePercent || 0.129;
+    const paymentFeePercent = settings.paymentFeePercent || 0.029;
+    const fixedFee = settings.fixedPaymentFeeEur || 0.35;
+    const targetProfit = num(data.targetProfitPercent, 0.25);
+    const salePrice = num(data.currentSalePriceEur);
+
+    const breakeven =
+      totalCost > 0 ? totalCost / (1 - ebayFeePercent - paymentFeePercent) : 0;
+
+    const recommended =
+      totalCost > 0
+        ? totalCost / (1 - ebayFeePercent - paymentFeePercent - targetProfit)
+        : 0;
+
+    const estimatedFees = salePrice * ebayFeePercent + salePrice * paymentFeePercent + fixedFee;
+    const netProfit = salePrice - totalCost - estimatedFees;
+    const margin = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
+
+    setText('previewTotalCost', formatMoney(totalCost));
+    setText('previewBreakeven', formatMoney(breakeven));
+    setText('previewRecommended', formatMoney(recommended));
+
+    const profitEl = document.getElementById('previewProfit');
+    profitEl.textContent = formatMoney(netProfit);
+    profitEl.className = netProfit < 0 ? 'negative' : 'positive';
+
+    const marginEl = document.getElementById('previewMargin');
+    marginEl.textContent = margin.toFixed(1) + '%';
+    marginEl.className = margin < 0 ? 'negative' : 'positive';
+  }
+
+  function num(value, defaultValue) {
+    const parsed = Number(value);
+    return isNaN(parsed) ? (defaultValue || 0) : parsed;
+  }
+
+  function loadAppData() {
+    showToast('Refreshing data...');
+
+    google.script.run
+      .withSuccessHandler(data => {
+        appData = data;
+        renderDashboard();
+        renderProducts();
+        renderOrders();
+        renderInventory();
+        renderAccounts();
+        renderReturns();
+        updateProfitPreview();
+        showToast('Data refreshed.');
+      })
+      .withFailureHandler(error => {
+        showToast(error.message || 'Could not load sheet data.', true);
+      })
+      .getAppData();
+  }
+
+  function showPage(pageName) {
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    const pageId = pageName
+      .split('-')
+      .map((part, index) => index === 0
+        ? part
+        : part.charAt(0).toUpperCase() + part.slice(1)
+      )
+      .join('') + 'Page';
+
+    const page = document.getElementById(pageId);
+
+    if (page) {
+      page.classList.add('active');
+    }
+
+    const nav = document.querySelector(`[data-page="${pageName}"]`);
+
+    if (nav) {
+      nav.classList.add('active');
+    }
+
+    const meta = pageMeta[pageName] || ['eBay Manager', ''];
+    document.getElementById('pageTitle').textContent = meta[0];
+    document.getElementById('pageSubtitle').textContent = meta[1];
+  }
+
+  function renderDashboard() {
+    const d = appData.dashboard || {};
+
+    setText('totalProducts', d.totalProducts || 0);
+    setText('activeProducts', d.activeProducts || 0);
+    setText('ordersThisMonth', d.ordersThisMonth || 0);
+    setText('netProfitThisMonth', formatMoney(d.netProfitThisMonth || 0));
+    setText('lowStock', d.lowStock || 0);
+    setText('openReturns', d.openReturns || 0);
+
+    const container = document.getElementById('recentOrders');
+    const orders = [...(appData.orders || [])]
+      .sort((a, b) => new Date(b['Order Date']) - new Date(a['Order Date']))
+      .slice(0, 5);
+
+    if (!orders.length) {
+      container.innerHTML = '<div class="empty">No orders yet.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>SKU</th>
+              <th>Sale</th>
+              <th>Profit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map(order => `
+              <tr>
+                <td>${escapeHtml(order['Order ID'])}</td>
+                <td>${escapeHtml(order['SKU'])}</td>
+                <td>${formatMoney(order['Gross Sale EUR'])}</td>
+                <td>${formatMoney(order['Net Profit EUR'])}</td>
+                <td>${statusBadge(order['Order Status'])}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderProducts(query = '') {
+    const body = document.getElementById('productsTable');
+    const search = query.trim().toLowerCase();
+
+    const products = (appData.products || []).filter(product => {
+      if (!search) return true;
+
+      return [
+        product['SKU'],
+        product['Product Name'],
+        product['Supplier Name'],
+        product['Business Model'],
+        product['Condition']
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(search);
+    });
+
+    if (!products.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="8" class="empty">No products found.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = products.map(product => `
+      <tr>
+        <td>${escapeHtml(product['SKU'])}</td>
+        <td>${escapeHtml(product['Product Name'])}</td>
+        <td>${escapeHtml(product['Condition'])}</td>
+        <td>${escapeHtml(product['Business Model'])}</td>
+        <td>${formatMoney(product['Total Cost EUR'])}</td>
+        <td>${formatMoney(product['Current Sale Price EUR'])}</td>
+        <td>${formatMoney(product['Estimated Net Profit EUR'])}</td>
+        <td>${statusBadge(product['Product Status'])}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderOrders() {
+    const body = document.getElementById('ordersTable');
+    const orders = [...(appData.orders || [])]
+      .sort((a, b) => new Date(b['Order Date']) - new Date(a['Order Date']));
+
+    if (!orders.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty">No orders available.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = orders.map(order => `
+      <tr>
+        <td>${escapeHtml(order['Order ID'])}</td>
+        <td>${formatDate(order['Order Date'])}</td>
+        <td>${escapeHtml(order['SKU'])}</td>
+        <td>${escapeHtml(order['Buyer Username'])}</td>
+        <td>${formatMoney(order['Gross Sale EUR'])}</td>
+        <td>${formatMoney(order['Net Profit EUR'])}</td>
+        <td>${statusBadge(order['Order Status'])}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderInventory() {
+    const body = document.getElementById('inventoryTable');
+    const inventory = appData.inventory || [];
+
+    if (!inventory.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No inventory records available.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = inventory.map(item => `
+      <tr>
+        <td>${escapeHtml(item['SKU'])}</td>
+        <td>${escapeHtml(item['Product Name'])}</td>
+        <td>${escapeHtml(item['Inventory Type'])}</td>
+        <td>${escapeHtml(item['Quantity On Hand'])}</td>
+        <td>${escapeHtml(item['Available Quantity'])}</td>
+        <td>${statusBadge(item['Reorder Alert'])}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderAccounts() {
+    const body = document.getElementById('accountsTable');
+    const accounts = [...(appData.accounts || [])]
+      .sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
+    if (!accounts.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No transactions recorded.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = accounts.map(tx => `
+      <tr>
+        <td>${escapeHtml(tx['Tx ID'])}</td>
+        <td>${formatDate(tx['Date'])}</td>
+        <td>${escapeHtml(tx['Type'])}</td>
+        <td>${escapeHtml(tx['Category'])}</td>
+        <td>${formatMoney(tx['Amount EUR'])}</td>
+        <td>${statusBadge(tx['In/Out'])}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderReturns() {
+    const body = document.getElementById('returnsTable');
+    const returns = appData.returns || [];
+
+    if (!returns.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty">No return cases recorded.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = returns.map(item => `
+      <tr>
+        <td>${escapeHtml(item['Case ID'])}</td>
+        <td>${escapeHtml(item['Order ID'])}</td>
+        <td>${escapeHtml(item['Reason'])}</td>
+        <td>${statusBadge(item['Status'])}</td>
+        <td>${formatMoney(item['Refund EUR'])}</td>
+        <td>${formatMoney(item['Net Loss'])}</td>
+      </tr>
+    `).join('');
+  }
+
+  function formToObject(form) {
+    const data = {};
+
+    new FormData(form).forEach((value, key) => {
+      data[key] = value;
+    });
+
+    return data;
+  }
+
+  function setText(id, value) {
+    document.getElementById(id).textContent = value;
+  }
+
+  function formatMoney(value) {
+    const amount = Number(value || 0);
+
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  }
+
+  function formatDate(value) {
+    if (!value) return '—';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return new Intl.DateTimeFormat('de-DE').format(date);
+  }
+
+  function statusBadge(value) {
+    const text = value || '—';
+    const className = String(text)
+      .toLowerCase()
+      .replace(/\s+/g, '-');
+
+    return `<span class="status ${className}">${escapeHtml(text)}</span>`;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+
+    toast.textContent = message;
+    toast.classList.toggle('error', isError);
+    toast.classList.add('show');
+
+    window.clearTimeout(window.toastTimer);
+
+    window.toastTimer = window.setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+</script>

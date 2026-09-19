@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('Styles'); ?>
+  </head>
+
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">e</div>
+          <div>
+            <h1>eBay Manager</h1>
+            <p>Business Console</p>
+          </div>
+        </div>
+
+        <nav class="menu">
+          <button class="nav-item active" data-page="dashboard">
+            <span>▦</span> Dashboard
+          </button>
+          <button class="nav-item" data-page="products">
+            <span>◫</span> Products
+          </button>
+          <button class="nav-item" data-page="add-product">
+            <span>＋</span> Add Product
+          </button>
+          <button class="nav-item" data-page="orders">
+            <span>▤</span> Orders
+          </button>
+          <button class="nav-item" data-page="research">
+            <span>⌕</span> Product Research
+          </button>
+          <button class="nav-item" data-page="inventory">
+            <span>▣</span> Inventory
+          </button>
+          <button class="nav-item" data-page="accounts">
+            <span>$</span> Accounts
+          </button>
+          <button class="nav-item" data-page="returns">
+            <span>↩</span> Returns
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="dot"></span>
+          Google Sheets backend connected
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <h2 id="pageTitle">Dashboard</h2>
+            <p id="pageSubtitle">Your eBay business overview</p>
+          </div>
+
+          <div class="topbar-actions">
+            <button class="secondary-btn" id="refreshButton">
+              ↻ Refresh
+            </button>
+            <button class="primary-btn" id="quickAddButton">
+              + Add Product
+            </button>
+          </div>
+        </header>
+
+        <section id="dashboardPage" class="page active">
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Total Products</span>
+              <strong id="totalProducts">—</strong>
+              <small>All product records</small>
+            </article>
+
+            <article class="stat-card">
+              <span class="stat-label">Active Products</span>
+              <strong id="activeProducts">—</strong>
+              <small>Ready for sale</small>
+            </article>
+
+            <article class="stat-card">
+              <span class="stat-label">Orders This Month</span>
+              <strong id="ordersThisMonth">—</strong>
+              <small>Current month</small>
+            </article>
+
+            <article class="stat-card success">
+              <span class="stat-label">Net Profit This Month</span>
+              <strong id="netProfitThisMonth">€0.00</strong>
+              <small>After costs and fees</small>
+            </article>
+
+            <article class="stat-card warning">
+              <span class="stat-label">Reorder Alerts</span>
+              <strong id="lowStock">—</strong>
+              <small>Stock needs attention</small>
+            </article>
+
+            <article class="stat-card danger">
+              <span class="stat-label">Open Returns</span>
+              <strong id="openReturns">—</strong>
+              <small>Cases to resolve</small>
+            </article>
+          </div>
+
+          <div class="dashboard-panels">
+            <div class="panel">
+              <div class="panel-title-row">
+                <div>
+                  <h3>Recent Orders</h3>
+                  <p>Latest eBay sales records</p>
+                </div>
+                <button class="text-button" data-go="orders">View all</button>
+              </div>
+              <div id="recentOrders"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title-row">
+                <div>
+                  <h3>Quick Actions</h3>
+                  <p>Common business tasks</p>
+                </div>
+              </div>
+
+              <div class="quick-actions">
+                <button data-go="add-product">+ Add New Product</button>
+                <button data-go="research">⌕ Research Product</button>
+                <button data-go="orders">▤ Add Order</button>
+                <button data-go="inventory">▣ Check Inventory</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="productsPage" class="page">
+          <div class="page-actions">
+            <input
+              id="productSearch"
+              class="search-input"
+              placeholder="Search SKU, product name, supplier..."
+            >
+            <button class="primary-btn" data-go="add-product">
+              + Add Product
+            </button>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Condition</th>
+                    <th>Model</th>
+                    <th>Cost EUR</th>
+                    <th>Sale Price</th>
+                    <th>Profit</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="addProductPage" class="page">
+          <div class="panel form-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Add Product</h3>
+                <p>New, used, refurbished, stock or dropship product</p>
+              </div>
+            </div>
+
+            <div class="profit-preview" id="profitPreview">
+              <div>
+                <span>Total Cost</span>
+                <strong id="previewTotalCost">€0.00</strong>
+              </div>
+              <div>
+                <span>Breakeven Price</span>
+                <strong id="previewBreakeven">€0.00</strong>
+              </div>
+              <div>
+                <span>Recommended Price</span>
+                <strong id="previewRecommended">€0.00</strong>
+              </div>
+              <div>
+                <span>Net Profit</span>
+                <strong id="previewProfit">€0.00</strong>
+              </div>
+              <div>
+                <span>Margin</span>
+                <strong id="previewMargin">0%</strong>
+              </div>
+            </div>
+
+            <form id="productForm">
+              <div class="form-grid">
+                <label>
+                  Product Name *
+                  <input name="productName" required>
+                </label>
+
+                <label>
+                  Category
+                  <input name="category" placeholder="e.g. Audio, Cables, Tools">
+                </label>
+
+                <label>
+                  Condition *
+                  <select name="condition" required>
+                    <option value="New">New</option>
+                    <option value="Used">Used</option>
+                    <option value="Refurbished">Refurbished</option>
+                  </select>
+                </label>
+
+                <label>
+                  Business Model *
+                  <select name="businessModel" required>
+                    <option value="Stock">Stock</option>
+                    <option value="Dropship">Dropship</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </label>
+
+                <label>
+                  Product Status
+                  <select name="productStatus">
+                    <option value="Research">Research</option>
+                    <option value="Active">Active</option>
+                    <option value="Paused">Paused</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                  </select>
+                </label>
+
+                <label>
+                  Sales Platform *
+                  <select name="salesPlatform" required>
+                    <option value="eBay_DE">eBay Germany</option>
+                    <option value="eBay_US">eBay USA</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label>
+                  Supplier Name
+                  <input name="supplierName">
+                </label>
+
+                <label>
+                  Supplier Platform
+                  <select name="supplierPlatform">
+                    <option value="">Select supplier platform</option>
+                    <option value="AliExpress">AliExpress</option>
+                    <option value="Alibaba">Alibaba</option>
+                    <option value="Kleinanzeigen">Kleinanzeigen</option>
+                    <option value="Local">Local</option>
+                    <option value="Wholesale">Wholesale</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label class="full">
+                  Supplier Product Link
+                  <input type="url" name="supplierLink" placeholder="https://...">
+                </label>
+
+                <label class="full">
+                  Main eBay Listing Link
+                  <input type="url" name="mainEbayListingUrl" placeholder="https://www.ebay.de/itm/...">
+                </label>
+
+                <label class="full">
+                  Product Photo
+                  <div class="image-upload-row">
+                    <input type="file" id="productImageFile" accept="image/*">
+                    <img id="productImagePreview" class="image-preview" alt="Preview">
+                  </div>
+                  <input type="hidden" name="imageUrl">
+                  <input type="hidden" name="imageFileId">
+                </label>
+
+                <label>
+                  Source Currency *
+                  <select name="currency" required>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="PKR">PKR</option>
+                  </select>
+                </label>
+
+                <label>
+                  Purchase Price (local currency)
+                  <input type="number" name="purchasePriceLocal" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Shipping to You (local currency)
+                  <input type="number" name="shippingToYouLocal" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Customs / Duty (EUR)
+                  <input type="number" name="customsDutyEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Packaging (EUR)
+                  <input type="number" name="packagingEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Refurbishment Cost (EUR)
+                  <input type="number" name="refurbishmentEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Dropship Customer Shipping (EUR)
+                  <input type="number" name="dropshipCustomerShippingEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Current Sale Price (EUR)
+                  <input type="number" name="currentSalePriceEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Target Profit %
+                  <input type="number" name="targetProfitPercent" min="0" max="0.9" step="0.01" value="0.25">
+                </label>
+
+                <label>
+                  Supplier MOQ
+                  <input type="number" name="supplierMoq" min="1" step="1" value="1">
+                </label>
+
+                <label>
+                  Lead Time (days)
+                  <input type="number" name="leadTimeDays" min="0" step="1">
+                </label>
+
+                <label>
+                  Dropship Supported?
+                  <select name="dropshipSupported">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                </label>
+
+                <label>
+                  Acquisition Source
+                  <input name="acquisitionSource" placeholder="Alibaba, Local, Kleinanzeigen">
+                </label>
+
+                <label class="full">
+                  Support Link 1
+                  <input type="url" name="supportLink1" placeholder="Alternative supplier / competitor / manual link">
+                </label>
+
+                <label class="full">
+                  Support Link 2
+                  <input type="url" name="supportLink2">
+                </label>
+
+                <label class="full">
+                  Support Link 3
+                  <input type="url" name="supportLink3">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="4"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="reset" class="secondary-btn">Clear</button>
+                <button type="submit" class="primary-btn">Save Product</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="ordersPage" class="page">
+          <div class="page-actions">
+            <h3>Orders</h3>
+            <button class="primary-btn" id="showOrderForm">
+              + Add Order
+            </button>
+          </div>
+
+          <div id="orderFormWrap" class="panel form-panel hidden">
+            <form id="orderForm">
+              <div class="form-grid">
+                <label>
+                  Order Date *
+                  <input type="date" name="orderDate" required>
+                </label>
+
+                <label>
+                  Sales Platform *
+                  <select name="salesPlatform" required>
+                    <option value="eBay_DE">eBay Germany</option>
+                    <option value="eBay_US">eBay USA</option>
+                  </select>
+                </label>
+
+                <label>
+                  SKU *
+                  <input name="sku" required>
+                </label>
+
+                <label>
+                  Product Name
+                  <input name="productName">
+                </label>
+
+                <label>
+                  Buyer Username
+                  <input name="buyerUsername">
+                </label>
+
+                <label>
+                  Quantity *
+                  <input type="number" name="quantity" min="1" value="1" required>
+                </label>
+
+                <label>
+                  Sale Currency *
+                  <select name="saleCurrency">
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="PKR">PKR</option>
+                  </select>
+                </label>
+
+                <label>
+                  Item Price *
+                  <input type="number" name="itemPriceLocal" step="0.01" min="0" required>
+                </label>
+
+                <label>
+                  Shipping Charged
+                  <input type="number" name="shippingChargedLocal" step="0.01" min="0">
+                </label>
+
+                <label>
+                  Product Cost EUR
+                  <input type="number" name="productCostEur" step="0.01" min="0">
+                </label>
+
+                <label>
+                  Shipping / Packaging EUR
+                  <input type="number" name="shippingPackagingCostEur" step="0.01" min="0">
+                </label>
+
+                <label>
+                  Fulfillment
+                  <select name="fulfillmentType">
+                    <option value="Self">Self</option>
+                    <option value="Dropship Supplier">Dropship Supplier</option>
+                  </select>
+                </label>
+
+                <label>
+                  Order Status
+                  <select name="orderStatus">
+                    <option value="New">New</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </label>
+
+                <label>
+                  Buyer Tracking Number
+                  <input name="buyerTrackingNumber">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="3"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="primary-btn">Save Order</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>SKU</th>
+                    <th>Buyer</th>
+                    <th>Gross Sale</th>
+                    <th>Profit</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="researchPage" class="page">
+          <div class="panel form-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Product Research</h3>
+                <p>Save supplier, competitor and sourcing opportunities.</p>
+              </div>
+            </div>
+
+            <form id="researchForm">
+              <div class="form-grid">
+                <label>
+                  Search Keyword *
+                  <input name="keyword" required placeholder="e.g. USB desk fan">
+                </label>
+
+                <label>
+                  Product Title
+                  <input name="productTitle">
+                </label>
+
+                <label>
+                  Potential Model *
+                  <select name="potentialModel" required>
+                    <option value="Stock">Stock</option>
+                    <option value="Dropship">Dropship</option>
+                    <option value="Used">Used</option>
+                  </select>
+                </label>
+
+                <label>
+                  Currency *
+                  <select name="currency">
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="PKR">PKR</option>
+                  </select>
+                </label>
+
+                <label>
+                  Product Price
+                  <input type="number" name="productPriceLocal" step="0.01">
+                </label>
+
+                <label>
+                  Shipping Price
+                  <input type="number" name="shippingLocal" step="0.01">
+                </label>
+
+                <label class="full">
+                  Main Listing / Supplier URL
+                  <input type="url" name="mainListingUrl">
+                </label>
+
+                <label class="full">
+                  Image URL
+                  <input type="url" name="imageUrl">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="4"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="primary-btn">Save Research</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="inventoryPage" class="page">
+          <div class="panel form-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Inventory</h3>
+                <p>Add stock or dropship inventory record.</p>
+              </div>
+            </div>
+
+            <form id="inventoryForm">
+              <div class="form-grid">
+                <label>
+                  SKU *
+                  <input name="sku" required>
+                </label>
+
+                <label>
+                  Product Name *
+                  <input name="productName" required>
+                </label>
+
+                <label>
+                  Variant
+                  <input name="variant">
+                </label>
+
+                <label>
+                  Inventory Type *
+                  <select name="inventoryType" required>
+                    <option value="On Hand">On Hand</option>
+                    <option value="Dropship">Dropship</option>
+                    <option value="Virtual">Virtual</option>
+                  </select>
+                </label>
+
+                <label>
+                  Quantity On Hand
+                  <input type="number" name="quantityOnHand" min="0" value="0">
+                </label>
+
+                <label>
+                  Quantity Reserved
+                  <input type="number" name="quantityReserved" min="0" value="0">
+                </label>
+
+                <label>
+                  Reorder Level
+                  <input type="number" name="reorderLevel" min="0" value="0">
+                </label>
+
+                <label>
+                  Location / Bin
+                  <input name="locationBin">
+                </label>
+
+                <label>
+                  Supplier Name
+                  <input name="supplierName">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="3"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="primary-btn">Save Inventory</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>On Hand</th>
+                    <th>Available</th>
+                    <th>Alert</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="accountsPage" class="page">
+          <div class="panel form-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Accounts</h3>
+                <p>Log business income and expenses.</p>
+              </div>
+            </div>
+
+            <form id="accountsForm">
+              <div class="form-grid">
+                <label>
+                  Type *
+                  <select name="type" required>
+                    <option value="Sale">Sale</option>
+                    <option value="Purchase">Purchase</option>
+                    <option value="Fee">Fee</option>
+                    <option value="Refund">Refund</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label>
+                  Category *
+                  <input name="category" required placeholder="e.g. Inventory, Shipping, eBay Fees">
+                </label>
+
+                <label>
+                  Direction *
+                  <select name="direction" required>
+                    <option value="In">In</option>
+                    <option value="Out">Out</option>
+                  </select>
+                </label>
+
+                <label>
+                  Amount (EUR) *
+                  <input type="number" name="amountEur" step="0.01" min="0" required>
+                </label>
+
+                <label>
+                  Date
+                  <input type="date" name="date">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="3"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="primary-btn">Save Transaction</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tx ID</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Amount EUR</th>
+                    <th>In/Out</th>
+                  </tr>
+                </thead>
+                <tbody id="accountsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="returnsPage" class="page">
+          <div class="panel form-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Returns</h3>
+                <p>Track return and refund cases.</p>
+              </div>
+            </div>
+
+            <form id="returnsForm">
+              <div class="form-grid">
+                <label>
+                  Order ID *
+                  <input name="orderId" required placeholder="EB-10001">
+                </label>
+
+                <label>
+                  Reason *
+                  <input name="reason" required>
+                </label>
+
+                <label>
+                  Status
+                  <select name="returnStatus">
+                    <option value="Open">Open</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </label>
+
+                <label>
+                  Refund (EUR)
+                  <input type="number" name="refundEur" step="0.01" min="0">
+                </label>
+
+                <label>
+                  Additional Loss (EUR)
+                  <input type="number" name="additionalLossEur" step="0.01" min="0">
+                </label>
+
+                <label>
+                  Date
+                  <input type="date" name="date">
+                </label>
+
+                <label class="full">
+                  Notes
+                  <textarea name="notes" rows="3"></textarea>
+                </label>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="primary-btn">Save Return</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Case ID</th>
+                    <th>Order ID</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Refund EUR</th>
+                    <th>Net Loss</th>
+                  </tr>
+                </thead>
+                <tbody id="returnsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <?!= include('JavaScript'); ?>
+  </body>
+</html>
