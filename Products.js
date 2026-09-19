@@ -96,10 +96,12 @@ function buildProductRow_(product, sku) {
       ? totalCost / (1 - ebayFee - paymentFee)
       : 0;
 
-  const estimatedEbayFee = salePrice * ebayFee;
-  const estimatedPaymentFee = salePrice * paymentFee + fixedFee;
+  const estimatedEbayFee = salePrice > 0 ? salePrice * ebayFee : 0;
+  const estimatedPaymentFee = salePrice > 0 ? salePrice * paymentFee + fixedFee : 0;
   const estimatedProfit =
-    salePrice - totalCost - estimatedEbayFee - estimatedPaymentFee;
+    salePrice > 0
+      ? salePrice - totalCost - estimatedEbayFee - estimatedPaymentFee
+      : 0;
 
   const estimatedMargin =
     salePrice > 0 ? estimatedProfit / salePrice : 0;

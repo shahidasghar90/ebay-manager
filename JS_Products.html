@@ -161,8 +161,10 @@
         ? totalCost / (1 - ebayFeePercent - paymentFeePercent - targetProfit)
         : 0;
 
-    const estimatedFees = salePrice * ebayFeePercent + salePrice * paymentFeePercent + fixedFee;
-    const netProfit = salePrice - totalCost - estimatedFees;
+    const estimatedFees = salePrice > 0
+      ? salePrice * ebayFeePercent + salePrice * paymentFeePercent + fixedFee
+      : 0;
+    const netProfit = salePrice > 0 ? salePrice - totalCost - estimatedFees : 0;
     const margin = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
 
     setText('previewTotalCost', formatMoney(totalCost));
