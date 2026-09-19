@@ -628,7 +628,7 @@ function uploadImageToDrive(base64Data, filename, sku) {
   return {
     success: true,
     fileId: fileId,
-    url: 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000'
+    url: 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000'
   };
 }
 
