@@ -77,10 +77,6 @@
       renderProducts(event.target.value);
     });
 
-    document.getElementById('showOrderForm').addEventListener('click', () => {
-      document.getElementById('orderFormWrap').classList.toggle('hidden');
-    });
-
     ['filterStatus', 'filterCondition', 'filterModel', 'filterPlatform'].forEach(id => {
       document.getElementById(id).addEventListener('change', () => {
         renderProducts(document.getElementById('productSearch').value);

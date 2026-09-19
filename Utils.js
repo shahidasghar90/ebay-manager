@@ -125,6 +125,10 @@ function nextNumericId_(sheet) {
   return largest + 1;
 }
 
+function round2_(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
 function toNumber_(value, defaultValue) {
   const number = Number(value);
 

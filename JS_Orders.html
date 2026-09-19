@@ -1,4 +1,6 @@
 <script>
+  let editingOrderId = null;
+
   function setupOrderForm() {
     const form = document.getElementById('orderForm');
 
@@ -8,31 +10,87 @@
       });
     });
 
-    document.getElementById('orderForm').addEventListener('submit', event => {
+    document.getElementById('showOrderForm').addEventListener('click', () => {
+      const wrap = document.getElementById('orderFormWrap');
+      const opening = wrap.classList.contains('hidden');
+
+      if (opening) resetOrderForm();
+
+      wrap.classList.toggle('hidden');
+    });
+
+    form.addEventListener('submit', event => {
       event.preventDefault();
 
-      const button = event.target.querySelector('button[type="submit"]');
+      const isEditing = !!editingOrderId;
+      const button = document.getElementById('orderSubmitButton');
       button.disabled = true;
-      button.textContent = 'Saving...';
+      button.textContent = isEditing ? 'Updating...' : 'Saving...';
 
-      google.script.run
+      const run = google.script.run
         .withSuccessHandler(result => {
           showToast(
-            `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
+            isEditing
+              ? `Order updated: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
+              : `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
           );
-          event.target.reset();
-          button.disabled = false;
-          button.textContent = 'Save Order';
+          resetOrderForm();
           document.getElementById('orderFormWrap').classList.add('hidden');
           loadAppData();
         })
         .withFailureHandler(error => {
           showToast(error.message || 'Could not save order.', true);
           button.disabled = false;
-          button.textContent = 'Save Order';
-        })
-        .saveOrder(formToObject(event.target));
+          button.textContent = isEditing ? 'Update Order' : 'Save Order';
+        });
+
+      if (isEditing) {
+        run.updateOrder(formToObject(form));
+      } else {
+        run.saveOrder(formToObject(form));
+      }
     });
+  }
+
+  function resetOrderForm() {
+    editingOrderId = null;
+
+    const form = document.getElementById('orderForm');
+    form.reset();
+    setField(form, 'orderId', '');
+
+    document.getElementById('orderSubmitButton').textContent = 'Save Order';
+  }
+
+  function editOrder(orderId) {
+    const order = (appData.orders || []).find(o => String(o['Order ID']) === String(orderId));
+
+    if (!order) return;
+
+    editingOrderId = orderId;
+
+    const form = document.getElementById('orderForm');
+    form.reset();
+
+    setField(form, 'orderId', order['Order ID']);
+    setField(form, 'orderDate', String(order['Order Date'] || '').substring(0, 10));
+    setField(form, 'salesPlatform', order['Sales Platform']);
+    setField(form, 'sku', order['SKU']);
+    setField(form, 'productName', order['Product Name']);
+    setField(form, 'buyerUsername', order['Buyer Username']);
+    setField(form, 'quantity', order['Quantity']);
+    setField(form, 'saleCurrency', order['Sale Currency']);
+    setField(form, 'itemPriceLocal', order['Item Price Local']);
+    setField(form, 'shippingChargedLocal', order['Shipping Charged Local']);
+    setField(form, 'productCostEur', order['Product Cost EUR']);
+    setField(form, 'shippingPackagingCostEur', order['Shipping/Packaging Cost EUR']);
+    setField(form, 'fulfillmentType', order['Fulfillment Type']);
+    setField(form, 'orderStatus', order['Order Status']);
+    setField(form, 'buyerTrackingNumber', order['Buyer Tracking Number']);
+    setField(form, 'notes', order['Notes']);
+
+    document.getElementById('orderSubmitButton').textContent = 'Update Order';
+    document.getElementById('orderFormWrap').classList.remove('hidden');
   }
 
   function fillOrderFieldsFromSku(form) {
@@ -43,8 +101,13 @@
 
     setField(form, 'productName', product['Product Name']);
     setField(form, 'saleCurrency', 'EUR');
-    setField(form, 'itemPriceLocal', product['Current Sale Price EUR']);
-    setField(form, 'productCostEur', product['Total Cost EUR']);
+    setField(form, 'itemPriceLocal', round2Display(product['Current Sale Price EUR']));
+    setField(form, 'productCostEur', round2Display(product['Total Cost EUR']));
+  }
+
+  function round2Display(value) {
+    const number = Number(value || 0);
+    return Math.round((number + Number.EPSILON) * 100) / 100;
   }
 
   function renderOrderSkuOptions() {
@@ -64,7 +127,7 @@
     if (!orders.length) {
       body.innerHTML = `
         <tr>
-          <td colspan="7" class="empty">No orders available.</td>
+          <td colspan="8" class="empty">No orders available.</td>
         </tr>
       `;
       return;
@@ -79,6 +142,11 @@
         <td>${formatMoney(order['Gross Sale EUR'])}</td>
         <td>${formatMoney(order['Net Profit EUR'])}</td>
         <td>${statusBadge(order['Order Status'])}</td>
+        <td>
+          <div class="action-buttons">
+            <button onclick="editOrder('${escapeHtml(order['Order ID'])}')">Edit</button>
+          </div>
+        </td>
       </tr>
     `).join('');
   }

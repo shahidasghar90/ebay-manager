@@ -69,8 +69,8 @@ function buildProductRow_(product, sku) {
   const rate = getFxRate_(product.currency);
   const purchaseLocal = toNumber_(product.purchasePriceLocal);
   const shippingLocal = toNumber_(product.shippingToYouLocal);
-  const purchaseEur = purchaseLocal * rate;
-  const shippingEur = shippingLocal * rate;
+  const purchaseEur = round2_(purchaseLocal * rate);
+  const shippingEur = round2_(shippingLocal * rate);
 
   const customs = toNumber_(product.customsDutyEur);
   const packaging = toNumber_(product.packagingEur);
@@ -78,14 +78,15 @@ function buildProductRow_(product, sku) {
   const dropshipShipping = toNumber_(product.dropshipCustomerShippingEur);
   const dropshipFee = toNumber_(product.dropshipHandlingFeeEur);
 
-  const totalCost =
+  const totalCost = round2_(
     purchaseEur +
     shippingEur +
     customs +
     packaging +
     refurb +
     dropshipShipping +
-    dropshipFee;
+    dropshipFee
+  );
 
   const ebayFee = toNumber_(product.ebayFeePercent, 0.129);
   const paymentFee = toNumber_(product.paymentFeePercent, 0.029);
@@ -93,25 +94,28 @@ function buildProductRow_(product, sku) {
   const targetProfit = toNumber_(product.targetProfitPercent, 0.25);
   const salePrice = toNumber_(product.currentSalePriceEur);
 
-  const recommendedPrice =
+  const recommendedPrice = round2_(
     totalCost > 0
       ? totalCost / (1 - ebayFee - paymentFee - targetProfit)
-      : 0;
+      : 0
+  );
 
-  const minPrice =
+  const minPrice = round2_(
     totalCost > 0
       ? totalCost / (1 - ebayFee - paymentFee)
-      : 0;
+      : 0
+  );
 
-  const estimatedEbayFee = salePrice > 0 ? salePrice * ebayFee : 0;
-  const estimatedPaymentFee = salePrice > 0 ? salePrice * paymentFee + fixedFee : 0;
-  const estimatedProfit =
+  const estimatedEbayFee = round2_(salePrice > 0 ? salePrice * ebayFee : 0);
+  const estimatedPaymentFee = round2_(salePrice > 0 ? salePrice * paymentFee + fixedFee : 0);
+  const estimatedProfit = round2_(
     salePrice > 0
       ? salePrice - totalCost - estimatedEbayFee - estimatedPaymentFee
-      : 0;
+      : 0
+  );
 
   const estimatedMargin =
-    salePrice > 0 ? estimatedProfit / salePrice : 0;
+    salePrice > 0 ? Math.round((estimatedProfit / salePrice) * 10000) / 10000 : 0;
 
   const row = [
     sku,

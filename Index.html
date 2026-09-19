@@ -472,6 +472,7 @@
 
           <div id="orderFormWrap" class="panel form-panel hidden">
             <form id="orderForm">
+              <input type="hidden" name="orderId">
               <div class="form-grid">
                 <label>
                   Order Date *
@@ -567,7 +568,7 @@
               </div>
 
               <div class="form-footer">
-                <button type="submit" class="primary-btn">Save Order</button>
+                <button type="submit" class="primary-btn" id="orderSubmitButton">Save Order</button>
               </div>
             </form>
           </div>
@@ -584,6 +585,7 @@
                     <th>Gross Sale</th>
                     <th>Profit</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="ordersTable"></tbody>
