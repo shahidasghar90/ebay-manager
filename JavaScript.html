@@ -35,7 +35,19 @@
     setupImageUpload();
     setupProfitPreview();
     loadAppData();
+    restoreLastPage();
   });
+
+  function restoreLastPage() {
+    try {
+      const savedPage = localStorage.getItem('currentPage');
+      if (savedPage && pageMeta[savedPage]) {
+        showPage(savedPage);
+      }
+    } catch (error) {
+      // localStorage unavailable (private browsing etc.) - stay on default page
+    }
+  }
 
   function setupNavigation() {
     document.querySelectorAll('[data-page], [data-go]').forEach(button => {
@@ -379,6 +391,12 @@
   }
 
   function showPage(pageName) {
+    try {
+      localStorage.setItem('currentPage', pageName);
+    } catch (error) {
+      // localStorage unavailable - navigation still works, just won't persist
+    }
+
     document.querySelectorAll('.page').forEach(page => {
       page.classList.remove('active');
     });
