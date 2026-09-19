@@ -35,6 +35,8 @@
               ? `Order updated: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
               : `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
           );
+          upsertRecord(appData.orders, 'Order ID', result.record);
+          renderOrders();
           resetOrderForm();
           closeOrderModal();
           loadAppData();

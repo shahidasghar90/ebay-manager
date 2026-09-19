@@ -20,6 +20,8 @@
               ? `Product updated: ${result.sku}.`
               : `Product saved: ${result.sku}. Estimated profit: ${formatMoney(result.estimatedProfit)}`
           );
+          upsertRecord(appData.products, 'SKU', result.record);
+          renderProducts();
           resetProductFormForAdd();
           loadAppData();
           showPage('products');

@@ -125,6 +125,18 @@ function nextNumericId_(sheet) {
   return largest + 1;
 }
 
+function rowToRecord_(sheetName, row) {
+  const sheet = getSheet_(sheetName);
+  const headers = sheet.getRange(1, 1, 1, row.length).getValues()[0].map(h => String(h).trim());
+  const record = {};
+
+  headers.forEach((header, index) => {
+    record[header] = sanitizeCellValue_(row[index]);
+  });
+
+  return record;
+}
+
 function round2_(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }

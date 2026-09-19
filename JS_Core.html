@@ -218,6 +218,18 @@
     }
   }
 
+  function upsertRecord(list, keyField, record) {
+    if (!record) return;
+
+    const index = list.findIndex(item => item[keyField] === record[keyField]);
+
+    if (index > -1) {
+      list[index] = record;
+    } else {
+      list.push(record);
+    }
+  }
+
   function parseImageUrls(value) {
     if (!value) return [];
 

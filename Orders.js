@@ -30,7 +30,8 @@ function saveOrder(order) {
     success: true,
     orderId: orderId,
     grossSale: built.grossSale,
-    netProfit: built.netProfit
+    netProfit: built.netProfit,
+    record: rowToRecord_(SHEETS.ORDERS, built.row)
   };
 }
 
@@ -75,7 +76,8 @@ function updateOrder(order) {
     success: true,
     orderId: order.orderId,
     grossSale: built.grossSale,
-    netProfit: built.netProfit
+    netProfit: built.netProfit,
+    record: rowToRecord_(SHEETS.ORDERS, built.row)
   };
 }
 

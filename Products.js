@@ -30,7 +30,8 @@ function saveProduct(product) {
     sku: sku,
     totalCost: built.totalCost,
     recommendedPrice: built.recommendedPrice,
-    estimatedProfit: built.estimatedProfit
+    estimatedProfit: built.estimatedProfit,
+    record: rowToRecord_(SHEETS.PRODUCTS, built.row)
   };
 }
 
@@ -61,7 +62,8 @@ function updateProduct(product) {
     sku: product.sku,
     totalCost: built.totalCost,
     recommendedPrice: built.recommendedPrice,
-    estimatedProfit: built.estimatedProfit
+    estimatedProfit: built.estimatedProfit,
+    record: rowToRecord_(SHEETS.PRODUCTS, built.row)
   };
 }
 
