@@ -52,7 +52,22 @@ function updateOrder(order) {
     throw new Error('Order not found: ' + order.orderId);
   }
 
-  const built = buildOrderRow_(order, order.orderId);
+  const existing = getSheetObjects_(SHEETS.ORDERS).find(
+    o => String(o['Order ID']) === String(order.orderId)
+  ) || {};
+
+  const merged = Object.assign({
+    condition: existing['Condition'],
+    supplierName: existing['Supplier Name'],
+    supplierOrderId: existing['Supplier Order ID'],
+    supplierOrderDate: existing['Supplier Order Date'],
+    supplierTrackingNumber: existing['Supplier Tracking Number'],
+    supplierShipDate: existing['Supplier Ship Date'],
+    carrier: existing['Carrier'],
+    deliveredDate: existing['Delivered Date']
+  }, order);
+
+  const built = buildOrderRow_(merged, order.orderId);
 
   sheet.getRange(rowIndex, 1, 1, built.row.length).setValues([built.row]);
 
