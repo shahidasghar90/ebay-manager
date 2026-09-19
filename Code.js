@@ -121,7 +121,52 @@ function saveProduct(product) {
 
   const sheet = getSheet_(SHEETS.PRODUCTS);
   const sku = product.sku || nextPrefixedId_(sheet, 'SKU-', 0);
+  const built = buildProductRow_(product, sku);
 
+  sheet.appendRow(built.row);
+
+  return {
+    success: true,
+    message: 'Product saved successfully.',
+    sku: sku,
+    totalCost: built.totalCost,
+    recommendedPrice: built.recommendedPrice,
+    estimatedProfit: built.estimatedProfit
+  };
+}
+
+function updateProduct(product) {
+  validateRequired_(product, [
+    'sku',
+    'productName',
+    'condition',
+    'businessModel',
+    'salesPlatform',
+    'currency'
+  ]);
+
+  const sheet = getSheet_(SHEETS.PRODUCTS);
+  const rowIndex = findRowIndexByColumnValue_(sheet, 1, product.sku);
+
+  if (!rowIndex) {
+    throw new Error('Product not found: ' + product.sku);
+  }
+
+  const built = buildProductRow_(product, product.sku);
+
+  sheet.getRange(rowIndex, 1, 1, built.row.length).setValues([built.row]);
+
+  return {
+    success: true,
+    message: 'Product updated successfully.',
+    sku: product.sku,
+    totalCost: built.totalCost,
+    recommendedPrice: built.recommendedPrice,
+    estimatedProfit: built.estimatedProfit
+  };
+}
+
+function buildProductRow_(product, sku) {
   const rate = getFxRate_(product.currency);
   const purchaseLocal = toNumber_(product.purchasePriceLocal);
   const shippingLocal = toNumber_(product.shippingToYouLocal);
@@ -215,12 +260,8 @@ function saveProduct(product) {
     product.notes || ''
   ];
 
-  sheet.appendRow(row);
-
   return {
-    success: true,
-    message: 'Product saved successfully.',
-    sku: sku,
+    row: row,
     totalCost: totalCost,
     recommendedPrice: recommendedPrice,
     estimatedProfit: estimatedProfit

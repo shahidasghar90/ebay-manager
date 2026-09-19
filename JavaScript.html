@@ -26,6 +26,8 @@
     returns: ['Returns', 'Manage return and refund cases']
   };
 
+  let editingProductSku = null;
+
   document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupForms();
@@ -38,11 +40,13 @@
     document.querySelectorAll('[data-page], [data-go]').forEach(button => {
       button.addEventListener('click', () => {
         const page = button.dataset.page || button.dataset.go;
+        if (page === 'add-product') resetProductFormForAdd();
         showPage(page);
       });
     });
 
     document.getElementById('quickAddButton').addEventListener('click', () => {
+      resetProductFormForAdd();
       showPage('add-product');
     });
 
@@ -74,28 +78,33 @@
     document.getElementById('productForm').addEventListener('submit', event => {
       event.preventDefault();
 
+      const isEditing = !!editingProductSku;
       const button = event.target.querySelector('button[type="submit"]');
       button.disabled = true;
-      button.textContent = 'Saving...';
+      button.textContent = isEditing ? 'Updating...' : 'Saving...';
 
-      google.script.run
+      const run = google.script.run
         .withSuccessHandler(result => {
           showToast(
-            `Product saved: ${result.sku}. Estimated profit: ${formatMoney(result.estimatedProfit)}`
+            isEditing
+              ? `Product updated: ${result.sku}.`
+              : `Product saved: ${result.sku}. Estimated profit: ${formatMoney(result.estimatedProfit)}`
           );
-          event.target.reset();
-          resetImagePreview();
-          button.disabled = false;
-          button.textContent = 'Save Product';
+          resetProductFormForAdd();
           loadAppData();
           showPage('products');
         })
         .withFailureHandler(error => {
           showToast(error.message || 'Could not save product.', true);
           button.disabled = false;
-          button.textContent = 'Save Product';
-        })
-        .saveProduct(formToObject(event.target));
+          button.textContent = isEditing ? 'Update Product' : 'Save Product';
+        });
+
+      if (isEditing) {
+        run.updateProduct(formToObject(event.target));
+      } else {
+        run.saveProduct(formToObject(event.target));
+      }
     });
 
     document.getElementById('orderForm').addEventListener('submit', event => {
@@ -488,6 +497,7 @@
         <td>
           <div class="action-buttons">
             <button onclick="openProductModal('${escapeHtml(product['SKU'])}')">View</button>
+            <button onclick="editProduct('${escapeHtml(product['SKU'])}')">Edit</button>
             ${
               product['Product Status'] !== 'Archived'
                 ? `<button class="danger" onclick="archiveProductRow('${escapeHtml(product['SKU'])}')">Archive</button>`
@@ -497,6 +507,76 @@
         </td>
       </tr>
     `).join('');
+  }
+
+  function editProduct(sku) {
+    const product = (appData.products || []).find(p => p['SKU'] === sku);
+
+    if (!product) return;
+
+    showPage('add-product');
+    editingProductSku = sku;
+
+    const form = document.getElementById('productForm');
+    form.reset();
+    resetImagePreview();
+
+    setField(form, 'sku', product['SKU']);
+    setField(form, 'productName', product['Product Name']);
+    setField(form, 'category', product['Category']);
+    setField(form, 'condition', product['Condition']);
+    setField(form, 'businessModel', product['Business Model']);
+    setField(form, 'productStatus', product['Product Status']);
+    setField(form, 'salesPlatform', product['Sales Platform']);
+    setField(form, 'supplierName', product['Supplier Name']);
+    setField(form, 'supplierPlatform', product['Supplier Platform']);
+    setField(form, 'supplierLink', product['Supplier Link']);
+    setField(form, 'mainEbayListingUrl', product['Main eBay Listing URL']);
+    setField(form, 'imageUrl', product['Image URL']);
+    setField(form, 'imageFileId', product['Image File ID']);
+    setField(form, 'supportLink1', product['Support Link 1']);
+    setField(form, 'supportLink2', product['Support Link 2']);
+    setField(form, 'supportLink3', product['Support Link 3']);
+    setField(form, 'currency', product['Source Currency']);
+    setField(form, 'purchasePriceLocal', product['Purchase Price Local']);
+    setField(form, 'shippingToYouLocal', product['Shipping to You Local']);
+    setField(form, 'customsDutyEur', product['Customs/Duty EUR']);
+    setField(form, 'packagingEur', product['Packaging EUR']);
+    setField(form, 'refurbishmentEur', product['Refurbishment EUR']);
+    setField(form, 'dropshipCustomerShippingEur', product['Dropship Customer Shipping EUR']);
+    setField(form, 'dropshipHandlingFeeEur', product['Dropship Handling Fee EUR']);
+    setField(form, 'targetProfitPercent', product['Target Profit %']);
+    setField(form, 'currentSalePriceEur', product['Current Sale Price EUR']);
+    setField(form, 'supplierMoq', product['Supplier MOQ']);
+    setField(form, 'leadTimeDays', product['Lead Time Days']);
+    setField(form, 'dropshipSupported', product['Dropship Supported']);
+    setField(form, 'acquisitionSource', product['Acquisition Source']);
+    setField(form, 'acquisitionDate', String(product['Acquisition Date'] || '').substring(0, 10));
+    setField(form, 'notes', product['Notes']);
+
+    if (product['Image URL']) {
+      const preview = document.getElementById('productImagePreview');
+      preview.src = product['Image URL'];
+      preview.classList.add('show');
+    }
+
+    document.getElementById('productFormTitle').textContent = `Edit Product — ${sku}`;
+    form.querySelector('button[type="submit"]').textContent = 'Update Product';
+
+    updateProfitPreview();
+  }
+
+  function resetProductFormForAdd() {
+    editingProductSku = null;
+
+    const form = document.getElementById('productForm');
+    form.reset();
+    resetImagePreview();
+
+    document.getElementById('productFormTitle').textContent = 'Add Product';
+    form.querySelector('button[type="submit"]').textContent = 'Save Product';
+
+    updateProfitPreview();
   }
 
   function openProductModal(sku) {
