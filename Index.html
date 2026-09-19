@@ -488,12 +488,13 @@
 
                 <label>
                   SKU *
-                  <input name="sku" required>
+                  <input name="sku" list="orderSkuOptions" required autocomplete="off" placeholder="Select a product SKU">
+                  <datalist id="orderSkuOptions"></datalist>
                 </label>
 
                 <label>
                   Product Name
-                  <input name="productName">
+                  <input name="productName" autocomplete="off">
                 </label>
 
                 <label>

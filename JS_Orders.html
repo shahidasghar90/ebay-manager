@@ -1,5 +1,13 @@
 <script>
   function setupOrderForm() {
+    const form = document.getElementById('orderForm');
+
+    ['input', 'change'].forEach(eventName => {
+      form.querySelector('[name="sku"]').addEventListener(eventName, () => {
+        fillOrderFieldsFromSku(form);
+      });
+    });
+
     document.getElementById('orderForm').addEventListener('submit', event => {
       event.preventDefault();
 
@@ -25,6 +33,27 @@
         })
         .saveOrder(formToObject(event.target));
     });
+  }
+
+  function fillOrderFieldsFromSku(form) {
+    const sku = form.querySelector('[name="sku"]').value.trim();
+    const product = (appData.products || []).find(p => p['SKU'] === sku);
+
+    if (!product) return;
+
+    setField(form, 'productName', product['Product Name']);
+    setField(form, 'saleCurrency', 'EUR');
+    setField(form, 'itemPriceLocal', product['Current Sale Price EUR']);
+    setField(form, 'productCostEur', product['Total Cost EUR']);
+  }
+
+  function renderOrderSkuOptions() {
+    const datalist = document.getElementById('orderSkuOptions');
+
+    datalist.innerHTML = (appData.products || [])
+      .filter(product => product['Product Status'] !== 'Archived')
+      .map(product => `<option value="${escapeHtml(product['SKU'])}">${escapeHtml(product['Product Name'] || '')}</option>`)
+      .join('');
   }
 
   function renderOrders() {
