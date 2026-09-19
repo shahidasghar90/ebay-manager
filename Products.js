@@ -16,6 +16,13 @@ function saveProduct(product) {
   const built = buildProductRow_(product, sku);
 
   sheet.appendRow(built.row);
+  recordAutoAccountEntry_({
+    type: 'Purchase',
+    category: 'Inventory',
+    amountEur: built.totalCost,
+    direction: 'Out',
+    notes: 'Auto: purchase cost for ' + sku + (product.productName ? ' (' + product.productName + ')' : '')
+  });
 
   return {
     success: true,

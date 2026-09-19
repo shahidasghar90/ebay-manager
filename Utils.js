@@ -163,6 +163,16 @@ function validateRequired_(data, fields) {
   }
 }
 
+function recordAutoAccountEntry_(entry) {
+  if (!(entry.amountEur > 0)) return;
+
+  try {
+    saveAccountTx(entry);
+  } catch (error) {
+    Logger.log('Auto-accounting entry failed: ' + error.message);
+  }
+}
+
 function normalizeUrl_(value) {
   const trimmed = String(value || '').trim();
 

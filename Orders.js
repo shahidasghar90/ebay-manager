@@ -70,6 +70,14 @@ function saveOrder(order) {
     order.notes || ''
   ]);
 
+  recordAutoAccountEntry_({
+    type: 'Sale',
+    category: 'eBay Sales',
+    amountEur: grossSale,
+    direction: 'In',
+    notes: 'Auto: order ' + orderId + (order.sku ? ' (' + order.sku + ')' : '')
+  });
+
   return {
     success: true,
     orderId: orderId,

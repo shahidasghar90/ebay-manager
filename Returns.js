@@ -22,6 +22,14 @@ function saveReturnCase(item) {
     item.notes || ''
   ]);
 
+  recordAutoAccountEntry_({
+    type: 'Refund',
+    category: 'Returns',
+    amountEur: refund,
+    direction: 'Out',
+    notes: 'Auto: return ' + caseId + (item.orderId ? ' for order ' + item.orderId : '')
+  });
+
   return { success: true, caseId: caseId };
 }
 
