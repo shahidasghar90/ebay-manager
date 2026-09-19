@@ -12,12 +12,25 @@ const SHEETS = {
 const IMAGE_FOLDER_NAME = 'eBay_Product_Images';
 const SPREADSHEET_ID = '1SwmWtTn0KQlqYwv5maPzTggGliK3EFHqZCORkAT8rSU';
 
+const ALLOWED_EMAILS = [
+  'sadiadabir78@gmail.com',
+  'shahidasghar90@gmail.com'
+];
+
 function getSpreadsheet_() {
   const active = SpreadsheetApp.getActiveSpreadsheet();
   return active || SpreadsheetApp.openById(SPREADSHEET_ID);
 }
 
 function doGet() {
+  const email = Session.getActiveUser().getEmail();
+
+  if (ALLOWED_EMAILS.indexOf(email) === -1) {
+    return HtmlService.createHtmlOutput(
+      '<h2>Access Denied</h2><p>This app is restricted to authorized users.</p>'
+    ).setTitle('Access Denied');
+  }
+
   return HtmlService
     .createTemplateFromFile('Index')
     .evaluate()
