@@ -166,6 +166,15 @@ function updateProduct(product) {
   };
 }
 
+function normalizeUrl_(value) {
+  const trimmed = String(value || '').trim();
+
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  return 'https://' + trimmed;
+}
+
 function buildProductRow_(product, sku) {
   const rate = getFxRate_(product.currency);
   const purchaseLocal = toNumber_(product.purchasePriceLocal);
@@ -222,13 +231,13 @@ function buildProductRow_(product, sku) {
     product.salesPlatform || 'eBay_DE',
     product.supplierName || '',
     product.supplierPlatform || '',
-    product.supplierLink || '',
-    product.mainEbayListingUrl || '',
-    product.imageUrl || '',
+    normalizeUrl_(product.supplierLink),
+    normalizeUrl_(product.mainEbayListingUrl),
+    normalizeUrl_(product.imageUrl),
     product.imageFileId || '',
-    product.supportLink1 || '',
-    product.supportLink2 || '',
-    product.supportLink3 || '',
+    normalizeUrl_(product.supportLink1),
+    normalizeUrl_(product.supportLink2),
+    normalizeUrl_(product.supportLink3),
     product.currency || 'EUR',
     rate,
     purchaseLocal,
@@ -474,7 +483,7 @@ function saveInventoryItem(item) {
     reorderLevel,
     reorderAlert,
     item.supplierName || '',
-    item.supplierLink || '',
+    normalizeUrl_(item.supplierLink),
     item.leadTimeDays || '',
     item.lastRestockDate || '',
     '',
@@ -505,12 +514,12 @@ function saveResearch(research) {
     research.researchStatus || 'Idea',
     research.platform || '',
     research.supplierPlatform || '',
-    research.mainListingUrl || '',
-    research.imageUrl || '',
+    normalizeUrl_(research.mainListingUrl),
+    normalizeUrl_(research.imageUrl),
     research.imageUrl ? `=IMAGE(L${sheet.getLastRow() + 1})` : '',
-    research.supportLink1 || '',
-    research.supportLink2 || '',
-    research.supportLink3 || '',
+    normalizeUrl_(research.supportLink1),
+    normalizeUrl_(research.supportLink2),
+    normalizeUrl_(research.supportLink3),
     research.currency || 'EUR',
     getFxRate_(research.currency),
     toNumber_(research.productPriceLocal),

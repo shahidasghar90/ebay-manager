@@ -501,7 +501,7 @@
       <tr>
         <td>${
           product['Image URL']
-            ? `<img class="row-thumb" src="${escapeHtml(product['Image URL'])}" alt="">`
+            ? `<img class="row-thumb" src="${escapeHtml(product['Image URL'])}" alt="" onclick="openProductModal('${escapeHtml(product['SKU'])}')">`
             : ''
         }</td>
         <td>${escapeHtml(product['SKU'])}</td>
@@ -617,21 +617,25 @@
       ['Recommended Price', formatMoney(product['Recommended Sale Price EUR'])],
       ['Net Profit', formatMoney(product['Estimated Net Profit EUR'])],
       ['Margin', (Number(product['Estimated Profit Margin %'] || 0) * 100).toFixed(1) + '%'],
-      ['Supplier Link', product['Supplier Link']],
-      ['Listing Link', product['Main eBay Listing URL']],
+      ['Supplier Link', product['Supplier Link'], true],
+      ['Listing Link', product['Main eBay Listing URL'], true],
       ['Notes', product['Notes']]
     ];
 
     body.innerHTML = `
       ${
         product['Image URL']
-          ? `<img src="${escapeHtml(product['Image URL'])}" alt="">`
+          ? `<img src="${escapeHtml(product['Image URL'])}" alt="" onclick="window.open('${escapeHtml(product['Image URL'])}', '_blank')" style="cursor:pointer">`
           : ''
       }
-      ${fields.map(([label, value]) => `
+      ${fields.map(([label, value, isLink]) => `
         <div class="modal-field">
           <span>${escapeHtml(label)}</span>
-          <strong>${escapeHtml(value || '—')}</strong>
+          <strong>${
+            isLink && value
+              ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">${escapeHtml(value)}</a>`
+              : escapeHtml(value || '—')
+          }</strong>
         </div>
       `).join('')}
     `;
