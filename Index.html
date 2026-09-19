@@ -470,7 +470,13 @@
             </button>
           </div>
 
-          <div id="orderFormWrap" class="panel form-panel hidden">
+          <div id="orderFormModal" class="modal-overlay hidden">
+            <div class="modal-box modal-box-wide">
+              <div class="modal-header">
+                <h3 id="orderFormTitle">Add Order</h3>
+                <button type="button" class="text-button" id="closeOrderModal">✕</button>
+              </div>
+              <div class="modal-body">
             <form id="orderForm">
               <input type="hidden" name="orderId">
               <div class="form-grid">
@@ -571,6 +577,8 @@
                 <button type="submit" class="primary-btn" id="orderSubmitButton">Save Order</button>
               </div>
             </form>
+              </div>
+            </div>
           </div>
 
           <div class="panel table-panel">

@@ -11,12 +11,13 @@
     });
 
     document.getElementById('showOrderForm').addEventListener('click', () => {
-      const wrap = document.getElementById('orderFormWrap');
-      const opening = wrap.classList.contains('hidden');
+      resetOrderForm();
+      openOrderModal();
+    });
 
-      if (opening) resetOrderForm();
-
-      wrap.classList.toggle('hidden');
+    document.getElementById('closeOrderModal').addEventListener('click', closeOrderModal);
+    document.getElementById('orderFormModal').addEventListener('click', event => {
+      if (event.target.id === 'orderFormModal') closeOrderModal();
     });
 
     form.addEventListener('submit', event => {
@@ -35,7 +36,7 @@
               : `Order saved: ${result.orderId}. Net profit: ${formatMoney(result.netProfit)}`
           );
           resetOrderForm();
-          document.getElementById('orderFormWrap').classList.add('hidden');
+          closeOrderModal();
           loadAppData();
         })
         .withFailureHandler(error => {
@@ -59,7 +60,16 @@
     form.reset();
     setField(form, 'orderId', '');
 
+    document.getElementById('orderFormTitle').textContent = 'Add Order';
     document.getElementById('orderSubmitButton').textContent = 'Save Order';
+  }
+
+  function openOrderModal() {
+    document.getElementById('orderFormModal').classList.remove('hidden');
+  }
+
+  function closeOrderModal() {
+    document.getElementById('orderFormModal').classList.add('hidden');
   }
 
   function editOrder(orderId) {
@@ -89,8 +99,9 @@
     setField(form, 'buyerTrackingNumber', order['Buyer Tracking Number']);
     setField(form, 'notes', order['Notes']);
 
+    document.getElementById('orderFormTitle').textContent = `Edit Order — ${orderId}`;
     document.getElementById('orderSubmitButton').textContent = 'Update Order';
-    document.getElementById('orderFormWrap').classList.remove('hidden');
+    openOrderModal();
   }
 
   function fillOrderFieldsFromSku(form) {
