@@ -118,7 +118,7 @@ function buildProductRow_(product, sku) {
     product.supplierPlatform || '',
     normalizeUrl_(product.supplierLink),
     normalizeUrl_(product.mainEbayListingUrl),
-    normalizeUrl_(product.imageUrl),
+    product.imageUrl || '',
     product.imageFileId || '',
     normalizeUrl_(product.supportLink1),
     normalizeUrl_(product.supportLink2),

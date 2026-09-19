@@ -2,7 +2,9 @@
    IMAGE UPLOAD
 ========================= */
 
-function uploadImageToDrive(base64Data, filename, sku) {
+const MAX_PRODUCT_IMAGES = 5;
+
+function uploadImageToDrive(base64Data, filename, sku, condition, category) {
   if (!base64Data) {
     throw new Error('No image data provided.');
   }
@@ -20,7 +22,7 @@ function uploadImageToDrive(base64Data, filename, sku) {
     (sku || 'product') + '_' + (filename || 'image.jpg')
   );
 
-  const folder = getImageFolder_();
+  const folder = getImageFolder_(condition, category);
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
@@ -33,7 +35,18 @@ function uploadImageToDrive(base64Data, filename, sku) {
   };
 }
 
-function getImageFolder_() {
-  const folders = DriveApp.getFoldersByName(IMAGE_FOLDER_NAME);
-  return folders.hasNext() ? folders.next() : DriveApp.createFolder(IMAGE_FOLDER_NAME);
+function getImageFolder_(condition, category) {
+  const root = getOrCreateChildFolder_(DriveApp.getRootFolder(), IMAGE_FOLDER_NAME);
+  const conditionFolder = getOrCreateChildFolder_(root, sanitizeFolderName_(condition));
+  return getOrCreateChildFolder_(conditionFolder, sanitizeFolderName_(category));
+}
+
+function getOrCreateChildFolder_(parent, name) {
+  const folders = parent.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : parent.createFolder(name);
+}
+
+function sanitizeFolderName_(name) {
+  const cleaned = String(name || '').trim().replace(/[\\/:*?"<>|]/g, '-');
+  return cleaned || 'Uncategorized';
 }

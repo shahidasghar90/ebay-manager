@@ -3,8 +3,8 @@
     document.getElementById('productForm').addEventListener('submit', event => {
       event.preventDefault();
 
-      if (imageUploading) {
-        showToast('Image is still uploading, please wait a moment and try again.', true);
+      if (imageUploadCount > 0) {
+        showToast('Images are still uploading, please wait a moment and try again.', true);
         return;
       }
 
@@ -39,61 +39,105 @@
   }
 
   /* =========================
-     IMAGE UPLOAD
+     IMAGE UPLOAD (up to 5 photos, sorted into Drive by condition/category)
   ========================= */
+
+  const MAX_PRODUCT_IMAGES = 5;
 
   function setupImageUpload() {
     const fileInput = document.getElementById('productImageFile');
-    const preview = document.getElementById('productImagePreview');
     const form = document.getElementById('productForm');
 
     fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
+      const selected = Array.from(fileInput.files);
+      fileInput.value = '';
 
-      if (!file) return;
+      if (!selected.length) return;
 
-      const reader = new FileReader();
+      const remaining = MAX_PRODUCT_IMAGES - currentImages.length;
 
-      reader.onload = () => {
-        preview.src = reader.result;
-        preview.classList.add('show');
+      if (remaining <= 0) {
+        showToast(`Maximum ${MAX_PRODUCT_IMAGES} photos per product.`, true);
+        return;
+      }
 
-        imageUploading = true;
-        const submitButton = form.querySelector('button[type="submit"]');
-        const originalLabel = submitButton.textContent;
-        submitButton.disabled = true;
-        submitButton.textContent = 'Uploading image...';
-
-        google.script.run
-          .withSuccessHandler(result => {
-            form.querySelector('input[name="imageUrl"]').value = result.url;
-            form.querySelector('input[name="imageFileId"]').value = result.fileId;
-            imageUploading = false;
-            submitButton.disabled = false;
-            submitButton.textContent = originalLabel;
-            showToast('Image uploaded to Drive.');
-          })
-          .withFailureHandler(error => {
-            imageUploading = false;
-            submitButton.disabled = false;
-            submitButton.textContent = originalLabel;
-            showToast(error.message || 'Image upload failed.', true);
-          })
-          .uploadImageToDrive(
-            reader.result,
-            file.name,
-            form.querySelector('input[name="productName"]').value || 'product'
-          );
-      };
-
-      reader.readAsDataURL(file);
+      selected.slice(0, remaining).forEach(file => uploadOneProductImage(file, form));
     });
   }
 
-  function resetImagePreview() {
-    const preview = document.getElementById('productImagePreview');
-    preview.src = '';
-    preview.classList.remove('show');
+  function uploadOneProductImage(file, form) {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImageUploadingState(true);
+
+      google.script.run
+        .withSuccessHandler(result => {
+          currentImages.push({ url: result.url, fileId: result.fileId });
+          syncImageFields(form);
+          renderImageGallery();
+          setImageUploadingState(false);
+          showToast('Image uploaded to Drive.');
+        })
+        .withFailureHandler(error => {
+          setImageUploadingState(false);
+          showToast(error.message || 'Image upload failed.', true);
+        })
+        .uploadImageToDrive(
+          reader.result,
+          file.name,
+          form.querySelector('[name="productName"]').value || 'product',
+          form.querySelector('[name="condition"]').value,
+          form.querySelector('[name="category"]').value
+        );
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function setImageUploadingState(uploading) {
+    const button = document.getElementById('productForm').querySelector('button[type="submit"]');
+
+    if (uploading) {
+      imageUploadCount++;
+      button.disabled = true;
+      button.textContent = 'Uploading image...';
+      return;
+    }
+
+    imageUploadCount = Math.max(0, imageUploadCount - 1);
+
+    if (imageUploadCount === 0) {
+      button.disabled = false;
+      button.textContent = editingProductSku ? 'Update Product' : 'Save Product';
+    }
+  }
+
+  function renderImageGallery() {
+    const gallery = document.getElementById('productImageGallery');
+
+    gallery.innerHTML = currentImages.map((image, index) => `
+      <div class="gallery-thumb">
+        <img src="${escapeHtml(image.url)}" alt="">
+        <button type="button" onclick="removeProductImage(${index})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function removeProductImage(index) {
+    currentImages.splice(index, 1);
+    syncImageFields(document.getElementById('productForm'));
+    renderImageGallery();
+  }
+
+  function syncImageFields(form) {
+    form.querySelector('[name="imageUrl"]').value = JSON.stringify(currentImages.map(i => i.url));
+    form.querySelector('[name="imageFileId"]').value = JSON.stringify(currentImages.map(i => i.fileId));
+  }
+
+  function resetImageGallery() {
+    currentImages = [];
+    document.getElementById('productImageGallery').innerHTML = '';
     document.getElementById('productImageFile').value = '';
   }
 
@@ -241,8 +285,8 @@
     body.innerHTML = products.map(product => `
       <tr>
         <td>${
-          product['Image URL']
-            ? `<img class="row-thumb" src="${escapeHtml(product['Image URL'])}" alt="" onclick="openProductModal('${escapeHtml(product['SKU'])}')">`
+          parseImageUrls(product['Image URL'])[0]
+            ? `<img class="row-thumb" src="${escapeHtml(parseImageUrls(product['Image URL'])[0])}" alt="" onclick="openProductModal('${escapeHtml(product['SKU'])}')">`
             : ''
         }</td>
         <td>${escapeHtml(product['SKU'])}</td>
@@ -278,7 +322,7 @@
 
     const form = document.getElementById('productForm');
     form.reset();
-    resetImagePreview();
+    resetImageGallery();
 
     setField(form, 'sku', product['SKU']);
     setField(form, 'productName', product['Product Name']);
@@ -291,8 +335,6 @@
     setField(form, 'supplierPlatform', product['Supplier Platform']);
     setField(form, 'supplierLink', product['Supplier Link']);
     setField(form, 'mainEbayListingUrl', product['Main eBay Listing URL']);
-    setField(form, 'imageUrl', product['Image URL']);
-    setField(form, 'imageFileId', product['Image File ID']);
     setField(form, 'supportLink1', product['Support Link 1']);
     setField(form, 'supportLink2', product['Support Link 2']);
     setField(form, 'supportLink3', product['Support Link 3']);
@@ -313,11 +355,11 @@
     setField(form, 'acquisitionDate', String(product['Acquisition Date'] || '').substring(0, 10));
     setField(form, 'notes', product['Notes']);
 
-    if (product['Image URL']) {
-      const preview = document.getElementById('productImagePreview');
-      preview.src = product['Image URL'];
-      preview.classList.add('show');
-    }
+    const urls = parseImageUrls(product['Image URL']);
+    const fileIds = parseImageUrls(product['Image File ID']);
+    currentImages = urls.map((url, index) => ({ url: url, fileId: fileIds[index] || '' }));
+    syncImageFields(form);
+    renderImageGallery();
 
     document.getElementById('productFormTitle').textContent = `Edit Product — ${sku}`;
     form.querySelector('button[type="submit"]').textContent = 'Update Product';
@@ -331,7 +373,7 @@
 
     const form = document.getElementById('productForm');
     form.reset();
-    resetImagePreview();
+    resetImageGallery();
 
     document.getElementById('productFormTitle').textContent = 'Add Product';
     form.querySelector('button[type="submit"]').textContent = 'Save Product';
@@ -413,7 +455,6 @@
         fields: [
           ['Supplier Link', product['Supplier Link'], true],
           ['Listing Link', product['Main eBay Listing URL'], true],
-          ['Image URL', product['Image URL'], true],
           ['Support Link 1', product['Support Link 1'], true],
           ['Support Link 2', product['Support Link 2'], true],
           ['Support Link 3', product['Support Link 3'], true]
@@ -425,10 +466,14 @@
       }
     ];
 
+    const images = parseImageUrls(product['Image URL']);
+
     body.innerHTML = `
       ${
-        product['Image URL']
-          ? `<img src="${escapeHtml(product['Image URL'])}" alt="" onclick="window.open('${escapeHtml(product['Image URL'])}', '_blank')" style="cursor:pointer">`
+        images.length
+          ? `<div class="modal-gallery">${images.map(url => `
+              <img src="${escapeHtml(url)}" alt="" onclick="window.open('${escapeHtml(url)}', '_blank')">
+            `).join('')}</div>`
           : ''
       }
       ${sections.map(section => `

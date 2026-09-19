@@ -27,7 +27,8 @@
   };
 
   let editingProductSku = null;
-  let imageUploading = false;
+  let imageUploadCount = 0;
+  let currentImages = [];
 
   document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
@@ -217,6 +218,17 @@
     const field = form.querySelector(`[name="${name}"]`);
     if (field && value !== undefined && value !== null && value !== '') {
       field.value = value;
+    }
+  }
+
+  function parseImageUrls(value) {
+    if (!value) return [];
+
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [String(value)];
+    } catch (error) {
+      return [String(value)];
     }
   }
 

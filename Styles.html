@@ -581,24 +581,56 @@
     word-break: break-word;
   }
 
-  .image-upload-row {
+  .image-gallery {
     display: flex;
-    gap: 14px;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
   }
 
-  .image-preview {
-    width: 64px;
-    height: 64px;
-    border-radius: 8px;
-    border: 1px dashed var(--border);
-    background: #f8fafc;
+  .gallery-thumb {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+
+  .gallery-thumb img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    display: none;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
   }
 
-  .image-preview.show {
-    display: block;
+  .gallery-thumb button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    border: 2px solid #fff;
+    font-size: 11px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .modal-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .modal-gallery img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
   }
 
   .profit-preview {

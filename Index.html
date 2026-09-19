@@ -338,11 +338,9 @@
                 </label>
 
                 <label class="full">
-                  Product Photo
-                  <div class="image-upload-row">
-                    <input type="file" id="productImageFile" accept="image/*">
-                    <img id="productImagePreview" class="image-preview" alt="Preview">
-                  </div>
+                  Product Photos (up to 5)
+                  <input type="file" id="productImageFile" accept="image/*" multiple>
+                  <div class="image-gallery" id="productImageGallery"></div>
                   <input type="hidden" name="imageUrl">
                   <input type="hidden" name="imageFileId">
                 </label>

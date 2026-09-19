@@ -55,7 +55,7 @@
 
     const form = document.getElementById('productForm');
     form.reset();
-    resetImagePreview();
+    resetImageGallery();
 
     setField(form, 'productName', item['Product Title'] || item['Keyword']);
     setField(form, 'category', item['Category']);
@@ -73,10 +73,9 @@
     setField(form, 'notes', item['Notes']);
 
     if (item['Image URL']) {
-      setField(form, 'imageUrl', item['Image URL']);
-      const preview = document.getElementById('productImagePreview');
-      preview.src = item['Image URL'];
-      preview.classList.add('show');
+      currentImages = [{ url: item['Image URL'], fileId: '' }];
+      syncImageFields(form);
+      renderImageGallery();
     }
 
     updateConditionalFields();
