@@ -231,6 +231,36 @@ function getProducts() {
   return getSheetObjects_(SHEETS.PRODUCTS);
 }
 
+function archiveProduct(sku) {
+  validateRequired_({ sku: sku }, ['sku']);
+
+  const sheet = getSheet_(SHEETS.PRODUCTS);
+  const rowIndex = findRowIndexByColumnValue_(sheet, 1, sku);
+
+  if (!rowIndex) {
+    throw new Error('Product not found: ' + sku);
+  }
+
+  sheet.getRange(rowIndex, 6).setValue('Archived');
+
+  return { success: true, sku: sku };
+}
+
+function findRowIndexByColumnValue_(sheet, columnIndex, value) {
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return null;
+
+  const values = sheet
+    .getRange(2, columnIndex, lastRow - 1, 1)
+    .getValues()
+    .flat();
+
+  const offset = values.findIndex(cell => String(cell) === String(value));
+
+  return offset === -1 ? null : offset + 2;
+}
+
 function testReadInventory() {
   const data = getSheetObjects_(SHEETS.INVENTORY);
 

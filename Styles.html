@@ -449,6 +449,115 @@
     text-align: center;
   }
 
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .filter-row select {
+    width: auto;
+    min-width: 150px;
+    background: #fff;
+  }
+
+  .row-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #f1f5f9;
+    display: block;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 6px;
+  }
+
+  .action-buttons button {
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+  }
+
+  .action-buttons button:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+
+  .action-buttons button.danger:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+
+  .modal-overlay.hidden {
+    display: none;
+  }
+
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+  }
+
+  .modal-body {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .modal-body img {
+    grid-column: 1 / -1;
+    max-width: 220px;
+    border-radius: 8px;
+  }
+
+  .modal-field span {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .modal-field strong {
+    font-size: 14px;
+    word-break: break-word;
+  }
+
   .image-upload-row {
     display: flex;
     gap: 14px;

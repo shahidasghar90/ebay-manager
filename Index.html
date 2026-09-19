@@ -147,11 +147,44 @@
             </button>
           </div>
 
+          <div class="filter-row">
+            <select id="filterStatus">
+              <option value="">All Status</option>
+              <option value="Research">Research</option>
+              <option value="Active">Active</option>
+              <option value="Paused">Paused</option>
+              <option value="Out of Stock">Out of Stock</option>
+              <option value="Archived">Archived</option>
+            </select>
+
+            <select id="filterCondition">
+              <option value="">All Conditions</option>
+              <option value="New">New</option>
+              <option value="Used">Used</option>
+              <option value="Refurbished">Refurbished</option>
+            </select>
+
+            <select id="filterModel">
+              <option value="">All Models</option>
+              <option value="Stock">Stock</option>
+              <option value="Dropship">Dropship</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+
+            <select id="filterPlatform">
+              <option value="">All Platforms</option>
+              <option value="eBay_DE">eBay Germany</option>
+              <option value="eBay_US">eBay USA</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
           <div class="panel table-panel">
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
+                    <th>Image</th>
                     <th>SKU</th>
                     <th>Product</th>
                     <th>Condition</th>
@@ -160,6 +193,7 @@
                     <th>Sale Price</th>
                     <th>Profit</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="productsTable"></tbody>
@@ -167,6 +201,16 @@
             </div>
           </div>
         </section>
+
+        <div id="productModal" class="modal-overlay hidden">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3>Product Details</h3>
+              <button class="text-button" id="closeProductModal">✕</button>
+            </div>
+            <div class="modal-body" id="productModalBody"></div>
+          </div>
+        </div>
 
         <section id="addProductPage" class="page">
           <div class="panel form-panel">
@@ -324,6 +368,16 @@
                 <label>
                   Dropship Customer Shipping (EUR)
                   <input type="number" name="dropshipCustomerShippingEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Dropship Handling Fee (EUR)
+                  <input type="number" name="dropshipHandlingFeeEur" min="0" step="0.01">
+                </label>
+
+                <label>
+                  Acquisition Date
+                  <input type="date" name="acquisitionDate">
                 </label>
 
                 <label>
@@ -586,6 +640,23 @@
                 <button type="submit" class="primary-btn">Save Research</button>
               </div>
             </form>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Model</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="researchTable"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 

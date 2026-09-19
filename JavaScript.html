@@ -57,6 +57,17 @@
     document.getElementById('showOrderForm').addEventListener('click', () => {
       document.getElementById('orderFormWrap').classList.toggle('hidden');
     });
+
+    ['filterStatus', 'filterCondition', 'filterModel', 'filterPlatform'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        renderProducts(document.getElementById('productSearch').value);
+      });
+    });
+
+    document.getElementById('closeProductModal').addEventListener('click', closeProductModal);
+    document.getElementById('productModal').addEventListener('click', event => {
+      if (event.target.id === 'productModal') closeProductModal();
+    });
   }
 
   function setupForms() {
@@ -245,6 +256,7 @@
       'packagingEur',
       'refurbishmentEur',
       'dropshipCustomerShippingEur',
+      'dropshipHandlingFeeEur',
       'currentSalePriceEur',
       'targetProfitPercent'
     ];
@@ -277,7 +289,8 @@
       num(data.customsDutyEur) +
       num(data.packagingEur) +
       num(data.refurbishmentEur) +
-      num(data.dropshipCustomerShippingEur);
+      num(data.dropshipCustomerShippingEur) +
+      num(data.dropshipHandlingFeeEur);
 
     const ebayFeePercent = settings.ebayFeePercent || 0.129;
     const paymentFeePercent = settings.paymentFeePercent || 0.029;
@@ -327,6 +340,7 @@
         renderInventory();
         renderAccounts();
         renderReturns();
+        renderResearch();
         updateProfitPreview();
         showToast('Data refreshed.');
       })
@@ -421,8 +435,18 @@
   function renderProducts(query = '') {
     const body = document.getElementById('productsTable');
     const search = query.trim().toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const conditionFilter = document.getElementById('filterCondition').value;
+    const modelFilter = document.getElementById('filterModel').value;
+    const platformFilter = document.getElementById('filterPlatform').value;
 
     const products = (appData.products || []).filter(product => {
+      if (!statusFilter && product['Product Status'] === 'Archived') return false;
+      if (statusFilter && product['Product Status'] !== statusFilter) return false;
+      if (conditionFilter && product['Condition'] !== conditionFilter) return false;
+      if (modelFilter && product['Business Model'] !== modelFilter) return false;
+      if (platformFilter && product['Sales Platform'] !== platformFilter) return false;
+
       if (!search) return true;
 
       return [
@@ -440,7 +464,7 @@
     if (!products.length) {
       body.innerHTML = `
         <tr>
-          <td colspan="8" class="empty">No products found.</td>
+          <td colspan="10" class="empty">No products found.</td>
         </tr>
       `;
       return;
@@ -448,6 +472,11 @@
 
     body.innerHTML = products.map(product => `
       <tr>
+        <td>${
+          product['Image URL']
+            ? `<img class="row-thumb" src="${escapeHtml(product['Image URL'])}" alt="">`
+            : ''
+        }</td>
         <td>${escapeHtml(product['SKU'])}</td>
         <td>${escapeHtml(product['Product Name'])}</td>
         <td>${escapeHtml(product['Condition'])}</td>
@@ -456,8 +485,78 @@
         <td>${formatMoney(product['Current Sale Price EUR'])}</td>
         <td>${formatMoney(product['Estimated Net Profit EUR'])}</td>
         <td>${statusBadge(product['Product Status'])}</td>
+        <td>
+          <div class="action-buttons">
+            <button onclick="openProductModal('${escapeHtml(product['SKU'])}')">View</button>
+            ${
+              product['Product Status'] !== 'Archived'
+                ? `<button class="danger" onclick="archiveProductRow('${escapeHtml(product['SKU'])}')">Archive</button>`
+                : ''
+            }
+          </div>
+        </td>
       </tr>
     `).join('');
+  }
+
+  function openProductModal(sku) {
+    const product = (appData.products || []).find(p => p['SKU'] === sku);
+
+    if (!product) return;
+
+    const body = document.getElementById('productModalBody');
+    const fields = [
+      ['Category', product['Category']],
+      ['Condition', product['Condition']],
+      ['Business Model', product['Business Model']],
+      ['Status', product['Product Status']],
+      ['Platform', product['Sales Platform']],
+      ['Supplier', product['Supplier Name']],
+      ['Supplier Platform', product['Supplier Platform']],
+      ['Currency', product['Source Currency']],
+      ['Total Cost', formatMoney(product['Total Cost EUR'])],
+      ['Sale Price', formatMoney(product['Current Sale Price EUR'])],
+      ['Recommended Price', formatMoney(product['Recommended Sale Price EUR'])],
+      ['Net Profit', formatMoney(product['Estimated Net Profit EUR'])],
+      ['Margin', (Number(product['Estimated Profit Margin %'] || 0) * 100).toFixed(1) + '%'],
+      ['Supplier Link', product['Supplier Link']],
+      ['Listing Link', product['Main eBay Listing URL']],
+      ['Notes', product['Notes']]
+    ];
+
+    body.innerHTML = `
+      ${
+        product['Image URL']
+          ? `<img src="${escapeHtml(product['Image URL'])}" alt="">`
+          : ''
+      }
+      ${fields.map(([label, value]) => `
+        <div class="modal-field">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value || '—')}</strong>
+        </div>
+      `).join('')}
+    `;
+
+    document.getElementById('productModal').classList.remove('hidden');
+  }
+
+  function closeProductModal() {
+    document.getElementById('productModal').classList.add('hidden');
+  }
+
+  function archiveProductRow(sku) {
+    if (!confirm(`Archive product ${sku}? It will be hidden from the active list.`)) return;
+
+    google.script.run
+      .withSuccessHandler(() => {
+        showToast(`Product ${sku} archived.`);
+        loadAppData();
+      })
+      .withFailureHandler(error => {
+        showToast(error.message || 'Could not archive product.', true);
+      })
+      .archiveProduct(sku);
   }
 
   function renderOrders() {
@@ -510,6 +609,80 @@
         <td>${statusBadge(item['Reorder Alert'])}</td>
       </tr>
     `).join('');
+  }
+
+  function renderResearch() {
+    const body = document.getElementById('researchTable');
+    const research = appData.research || [];
+
+    if (!research.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty">No research records yet.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = research.map(item => `
+      <tr>
+        <td>${escapeHtml(item['Keyword'])}</td>
+        <td>${escapeHtml(item['Potential Model'])}</td>
+        <td>${formatMoney(item['Product Price EUR'])}</td>
+        <td>${statusBadge(item['Research Status'])}</td>
+        <td>
+          <div class="action-buttons">
+            <button onclick="convertResearchToProduct('${escapeHtml(item['Research ID'])}')">Convert to Product</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function convertResearchToProduct(researchId) {
+    const item = (appData.research || []).find(
+      r => String(r['Research ID']) === String(researchId)
+    );
+
+    if (!item) return;
+
+    showPage('add-product');
+
+    const form = document.getElementById('productForm');
+    form.reset();
+    resetImagePreview();
+
+    setField(form, 'productName', item['Product Title'] || item['Keyword']);
+    setField(form, 'category', item['Category']);
+    setField(form, 'condition', item['Potential Model'] === 'Used' ? 'Used' : 'New');
+    setField(form, 'businessModel', item['Potential Model'] === 'Used' ? 'Stock' : item['Potential Model']);
+    setField(form, 'currency', item['Currency']);
+    setField(form, 'purchasePriceLocal', item['Product Price Local']);
+    setField(form, 'shippingToYouLocal', item['Shipping Local']);
+    setField(form, 'supplierLink', item['Main Listing URL']);
+    setField(form, 'supplierPlatform', item['Supplier Platform']);
+    setField(form, 'acquisitionSource', item['Seller/Supplier']);
+    setField(form, 'supplierMoq', item['MOQ']);
+    setField(form, 'leadTimeDays', item['Lead Time Days']);
+    setField(form, 'dropshipSupported', item['Dropship Available']);
+    setField(form, 'notes', item['Notes']);
+
+    if (item['Image URL']) {
+      setField(form, 'imageUrl', item['Image URL']);
+      const preview = document.getElementById('productImagePreview');
+      preview.src = item['Image URL'];
+      preview.classList.add('show');
+    }
+
+    updateProfitPreview();
+    showToast('Research pre-filled into Add Product form. Review and save.');
+  }
+
+  function setField(form, name, value) {
+    const field = form.querySelector(`[name="${name}"]`);
+    if (field && value !== undefined && value !== null && value !== '') {
+      field.value = value;
+    }
   }
 
   function renderAccounts() {
