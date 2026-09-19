@@ -29,22 +29,30 @@ function include(filename) {
 
 function getAppData() {
   return {
-    products: getSheetObjects_(SHEETS.PRODUCTS),
-    orders: getSheetObjects_(SHEETS.ORDERS),
-    inventory: getSheetObjects_(SHEETS.INVENTORY),
-    research: getSheetObjects_(SHEETS.RESEARCH),
-    accounts: getSheetObjects_(SHEETS.ACCOUNTS),
-    returns: getSheetObjects_(SHEETS.RETURNS),
+    products: safeGetSheetObjects_(SHEETS.PRODUCTS),
+    orders: safeGetSheetObjects_(SHEETS.ORDERS),
+    inventory: safeGetSheetObjects_(SHEETS.INVENTORY),
+    research: safeGetSheetObjects_(SHEETS.RESEARCH),
+    accounts: safeGetSheetObjects_(SHEETS.ACCOUNTS),
+    returns: safeGetSheetObjects_(SHEETS.RETURNS),
     dashboard: getDashboardData_(),
     settings: getSettingsData_()
   };
 }
 
+function safeGetSheetObjects_(name) {
+  try {
+    return getSheetObjects_(name);
+  } catch (error) {
+    return [];
+  }
+}
+
 function getDashboardData_() {
-  const products = getSheetObjects_(SHEETS.PRODUCTS);
-  const orders = getSheetObjects_(SHEETS.ORDERS);
-  const inventory = getSheetObjects_(SHEETS.INVENTORY);
-  const returns = getSheetObjects_(SHEETS.RETURNS);
+  const products = safeGetSheetObjects_(SHEETS.PRODUCTS);
+  const orders = safeGetSheetObjects_(SHEETS.ORDERS);
+  const inventory = safeGetSheetObjects_(SHEETS.INVENTORY);
+  const returns = safeGetSheetObjects_(SHEETS.RETURNS);
 
   const today = formatDate_(new Date());
   const currentMonth = today.substring(0, 7);
