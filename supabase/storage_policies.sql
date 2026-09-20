@@ -23,3 +23,11 @@ create policy "Anyone can view product images"
   on storage.objects for select
   to public
   using (bucket_id = 'product-images');
+
+-- storage.buckets has its own RLS - without this, the public object
+-- URL resolves to "Bucket not found" because anon/public can't even
+-- see the bucket's metadata row.
+create policy "Anyone can view the product-images bucket"
+  on storage.buckets for select
+  to public
+  using (id = 'product-images');
