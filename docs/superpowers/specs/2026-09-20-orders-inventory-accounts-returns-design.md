@@ -45,10 +45,12 @@ One sequential plan, in this order, each step depending on the previous:
 1. **Orders** module (+ a small fix to `ProductForm.tsx` so new products
    auto-create a matching `inventory` row)
 2. **Inventory** module
-3. **Accounts** module
-4. **Returns** module
-5. Dashboard verification (all links resolve, stat cards show real numbers)
-6. End-to-end manual test with dummy data across the whole chain
+3. **Settings** module (new — needed before Accounts VAT support)
+4. **Accounts** module (with VAT support)
+5. **Returns** module
+6. **Research — competitor price comparison** enhancement
+7. Dashboard verification (all links resolve, stat cards show real numbers)
+8. End-to-end manual test with dummy data across the whole chain
 
 ## Shared conventions
 
@@ -174,7 +176,22 @@ inventory/accounts on `Cancelled` in this cycle.
   rows exist before a human ever visits this page; manual create/edit
   covers restocks and adjustments.
 
-## 3. Accounts module
+## 3. Settings module (new)
+
+The app has read `settings` (FX rates, fee percentages) since the start
+(`src/lib/settings.ts`) but has no UI to edit them — they're only
+editable directly in the Supabase table. This build adds:
+
+- `/settings` — one form: FX rates (`fx_usd`, `fx_pkr`), `ebay_fee_percent`,
+  `payment_fee_percent`, `fixed_payment_fee_eur`, and the two new VAT
+  keys below. Saves via upsert into the existing `settings` key/value
+  table (same shape `fetchSettings()` already reads).
+- New settings keys: `vat_registered` (0/1, default 0 = Kleinunternehmer/
+  VAT-exempt under §19 UStG) and `vat_rate_percent` (default 19).
+- `fetchSettings()` in `src/lib/settings.ts` extended to also return
+  `vatRegistered: boolean` and `vatRatePercent: number`.
+
+## 4. Accounts module
 
 - `/accounts` — ledger table (date, type, category, amount, direction,
   notes) newest-first, filters by type/direction/month, plus a summary
@@ -186,7 +203,34 @@ inventory/accounts on `Cancelled` in this cycle.
   read-only lock; they're editable/deletable like any manual entry, since
   this is a personal ledger, not an audit log.
 
-## 4. Returns module
+### VAT support (toggle-driven)
+
+Business may or may not be VAT-registered, and this can change over
+time (Kleinunternehmer → Regelbesteuerung), so VAT is a switchable mode,
+not a fixed schema assumption:
+
+- New nullable columns on `accounts`: `vat_rate_percent numeric`,
+  `vat_amount_eur numeric`.
+- When `settings.vat_registered` is off (default): Accounts form behaves
+  exactly as today, VAT fields hidden and left null. No behavior change
+  for Kleinunternehmer users.
+- When `settings.vat_registered` is on: the transaction form shows a
+  `vat_rate_percent` field (defaults to `settings.vat_rate_percent`) and
+  auto-computes `vat_amount_eur = amount_eur * vat_rate_percent / 100`
+  (amount_eur is treated as gross, matching how German invoices are
+  normally entered). Auto-generated rows (order sale, product purchase,
+  return refund) also populate these fields using the same settings
+  default when VAT mode is on.
+- `/accounts` gains a VAT summary strip, visible only when VAT mode is
+  on: for the filtered date range, `VAT collected` (sum of
+  `vat_amount_eur` where `direction = 'In'`), `VAT paid` (sum where
+  `direction = 'Out'`), and `VAT payable` (collected − paid) — the
+  number needed for an Umsatzsteuervoranmeldung. A month/year filter
+  already exists on this page for the general ledger view and doubles
+  as the VAT reporting period picker (monthly or yearly, per what
+  ELSTER asks for that filing).
+
+## 5. Returns module
 
 - `/returns` — list (case id, order id, reason, status, refund, net
   loss).
@@ -197,16 +241,32 @@ inventory/accounts on `Cancelled` in this cycle.
   `Returns.js`).
 - On save, auto-insert an `accounts` row: `{ type: 'Refund', category:
   'Returns', amount_eur: refund_eur, direction: 'Out', notes: 'Auto:
-  return <caseId> for order <orderId>' }`.
+  return <caseId> for order <orderId>' }` (VAT fields populated per the
+  Accounts VAT rules above when VAT mode is on).
 
-## 5. Dashboard verification
+## 6. Research — competitor price comparison
+
+`product_research` gets a new column: `competitor_prices jsonb not null
+default '[]'`, storing an array of `{ platform: string, price: number }`
+entries entered manually (no scraping/API in this cycle).
+
+- `ResearchForm.tsx` gains a repeatable row UI (add/remove), same
+  interaction pattern as the product photo list in `ProductForm.tsx`:
+  platform name (free text, e.g. "eBay.de", "Amazon.de", "Kleinanzeigen")
+  + price. Zero or more rows, optional.
+- `ResearchTable.tsx` / research detail show computed **Min / Max / Avg
+  competitor price** alongside the item's own `product_price_local`, so
+  it's visible at a glance whether the sourcing price is competitive
+  before converting to a Product.
+
+## 7. Dashboard verification
 
 Once the above pages exist, re-check `dashboard/page.tsx`'s existing
 links (`/orders`, `/inventory`) resolve, and that its stat card queries
 (`orders`, `inventory`, `returns_cases`) return meaningful numbers once
 dummy data exists.
 
-## 6. Testing plan (manual, with dummy data)
+## 8. Testing plan (manual, with dummy data)
 
 1. Create a dummy product → confirm a matching `inventory` row appears
    automatically with qty 0.
@@ -222,3 +282,10 @@ dummy data exists.
    and a `Refund` row appears in `/accounts` with the correct amount.
 6. Revisit `/dashboard` → confirm stat cards reflect the dummy data and
    the Quick Actions links no longer 404.
+7. Toggle `vat_registered` on in `/settings` → confirm the Accounts form
+   now shows VAT fields, a new sale/purchase auto-computes
+   `vat_amount_eur`, and the `/accounts` VAT summary strip appears with
+   correct collected/paid/payable totals. Toggle it back off → confirm
+   the form reverts to today's behavior.
+8. Add 2-3 competitor prices to a dummy research item → confirm
+   Min/Max/Avg display correctly next to the item's own price.
