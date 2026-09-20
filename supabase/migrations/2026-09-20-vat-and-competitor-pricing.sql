@@ -11,4 +11,10 @@ insert into settings (key, value) values
   ('vat_rate_percent', 19)
 on conflict (key) do nothing;
 
+-- Dedup any pre-existing duplicate SKU rows before the unique index below,
+-- keeping the oldest row per SKU (created_at, then id as a tiebreaker).
+delete from inventory a using inventory b
+  where a.sku = b.sku
+    and (a.created_at, a.id) > (b.created_at, b.id);
+
 create unique index if not exists idx_inventory_sku_unique on inventory (sku);
