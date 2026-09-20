@@ -10,3 +10,5 @@ insert into settings (key, value) values
   ('vat_registered', 0),
   ('vat_rate_percent', 19)
 on conflict (key) do nothing;
+
+create unique index if not exists idx_inventory_sku_unique on inventory (sku);

@@ -76,8 +76,8 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
       category: form.category,
       amount_eur: num(form.amountEur),
       direction: form.direction,
-      vat_rate_percent: settings?.vatRegistered ? num(form.vatRatePercent) : null,
-      vat_amount_eur: vatAmountEur,
+      vat_rate_percent: settings?.vatRegistered ? num(form.vatRatePercent) : tx?.vat_rate_percent ?? null,
+      vat_amount_eur: settings?.vatRegistered ? vatAmountEur : tx?.vat_amount_eur ?? null,
       notes: form.notes || null
     };
 

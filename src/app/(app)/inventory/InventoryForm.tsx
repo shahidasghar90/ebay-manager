@@ -85,7 +85,11 @@ export default function InventoryForm({
       : await supabase.from('inventory').insert(payload);
 
     if (saveError) {
-      setError(saveError.message);
+      if (!isEditing && saveError.code === '23505') {
+        setError('An inventory record for this SKU already exists — edit it instead of creating a new one.');
+      } else {
+        setError(saveError.message);
+      }
       setSaving(false);
       return;
     }

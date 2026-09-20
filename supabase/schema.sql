@@ -147,6 +147,7 @@ create table if not exists inventory (
 );
 
 create index if not exists idx_inventory_sku on inventory (sku);
+create unique index if not exists idx_inventory_sku_unique on inventory (sku);
 
 -- ---------------------------------------------------------------------
 -- PRODUCT RESEARCH
