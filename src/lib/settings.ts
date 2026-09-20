@@ -5,7 +5,9 @@ const DEFAULT_SETTINGS: Settings = {
   fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
   ebayFeePercent: 0.129,
   paymentFeePercent: 0.029,
-  fixedPaymentFeeEur: 0.35
+  fixedPaymentFeeEur: 0.35,
+  vatRegistered: false,
+  vatRatePercent: 19
 };
 
 export async function fetchSettings(supabase: SupabaseClient): Promise<Settings> {
@@ -23,6 +25,8 @@ export async function fetchSettings(supabase: SupabaseClient): Promise<Settings>
     },
     ebayFeePercent: byKey.ebay_fee_percent ?? DEFAULT_SETTINGS.ebayFeePercent,
     paymentFeePercent: byKey.payment_fee_percent ?? DEFAULT_SETTINGS.paymentFeePercent,
-    fixedPaymentFeeEur: byKey.fixed_payment_fee_eur ?? DEFAULT_SETTINGS.fixedPaymentFeeEur
+    fixedPaymentFeeEur: byKey.fixed_payment_fee_eur ?? DEFAULT_SETTINGS.fixedPaymentFeeEur,
+    vatRegistered: byKey.vat_registered ? true : DEFAULT_SETTINGS.vatRegistered,
+    vatRatePercent: byKey.vat_rate_percent ?? DEFAULT_SETTINGS.vatRatePercent
   };
 }
