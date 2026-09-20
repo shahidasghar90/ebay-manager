@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: '▦' },
@@ -21,6 +22,14 @@ type SidebarProps = {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <>
@@ -76,9 +85,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="mt-auto pt-4 text-xs text-slate-400 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#22c55e] inline-block" />
-          Supabase backend connected
+        <div className="mt-auto pt-4 grid gap-3">
+          <button
+            onClick={handleLogout}
+            className="text-left text-sm font-semibold text-slate-300 hover:text-white"
+          >
+            ⏻ Log out
+          </button>
+          <div className="text-xs text-slate-400 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#22c55e] inline-block" />
+            Supabase backend connected
+          </div>
         </div>
       </aside>
     </>

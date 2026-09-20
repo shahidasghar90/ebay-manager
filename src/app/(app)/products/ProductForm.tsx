@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
 import { calculatePricing } from '@/lib/pricing';
 import { formatMoney } from '@/lib/format';
-import type { Product, Settings } from '@/lib/types';
+import type { Product, ResearchItem, Settings } from '@/lib/types';
 
 const CATEGORY_PRESETS = [
   'Electronics',
@@ -54,7 +54,40 @@ type FormState = {
   notes: string;
 };
 
-function initialStateFromProduct(product?: Product): FormState {
+function initialStateFromProduct(product?: Product, research?: ResearchItem): FormState {
+  if (research) {
+    return {
+      sku: '',
+      productName: research.product_title || research.keyword,
+      category: research.category || '',
+      condition: research.potential_model === 'Used' ? 'Used' : 'New',
+      businessModel:
+        research.potential_model === 'Used' ? 'Stock' : (research.potential_model as 'Stock' | 'Dropship'),
+      productStatus: 'Research',
+      salesPlatform: 'eBay_DE',
+      supplierName: research.seller_supplier || '',
+      supplierPlatform: research.supplier_platform || '',
+      supplierLink: research.main_listing_url || '',
+      mainEbayListingUrl: '',
+      currency: research.currency || 'EUR',
+      purchasePriceLocal: String(research.product_price_local ?? ''),
+      shippingLocal: String(research.shipping_local ?? ''),
+      customsEur: '',
+      packagingEur: '',
+      refurbishmentEur: '',
+      dropshipCustomerShippingEur: '',
+      dropshipHandlingFeeEur: '',
+      currentSalePriceEur: '',
+      targetProfitPercent: '0.25',
+      supplierMoq: String(research.moq ?? 1),
+      leadTimeDays: String(research.lead_time_days ?? ''),
+      dropshipSupported: research.dropship_available ?? false,
+      acquisitionSource: research.seller_supplier || '',
+      acquisitionDate: '',
+      notes: research.notes || ''
+    };
+  }
+
   return {
     sku: product?.sku || '',
     productName: product?.product_name || '',
@@ -91,24 +124,36 @@ function num(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export default function ProductForm({ product }: { product?: Product }) {
+export default function ProductForm({
+  product,
+  research
+}: {
+  product?: Product;
+  research?: ResearchItem;
+}) {
   const isEditing = !!product;
   const router = useRouter();
   const supabase = createClient();
 
-  const [form, setForm] = useState<FormState>(() => initialStateFromProduct(product));
+  const [form, setForm] = useState<FormState>(() => initialStateFromProduct(product, research));
   const [settings, setSettings] = useState<Settings>({
     fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
     ebayFeePercent: 0.129,
     paymentFeePercent: 0.029,
     fixedPaymentFeeEur: 0.35
   });
-  const [images, setImages] = useState<{ url: string; path: string }[]>(
-    (product?.image_urls || []).map((url, index) => ({
-      url,
-      path: product?.image_file_ids?.[index] || ''
-    }))
-  );
+  const [images, setImages] = useState<{ url: string; path: string }[]>(() => {
+    if (product?.image_urls?.length) {
+      return product.image_urls.map((url, index) => ({
+        url,
+        path: product.image_file_ids?.[index] || ''
+      }));
+    }
+    if (research?.image_url) {
+      return [{ url: research.image_url, path: '' }];
+    }
+    return [];
+  });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -242,6 +287,13 @@ export default function ProductForm({ product }: { product?: Product }) {
       setError(saveError.message);
       setSaving(false);
       return;
+    }
+
+    if (!isEditing && research) {
+      await supabase
+        .from('product_research')
+        .update({ final_sku: sku, research_status: 'Converted' })
+        .eq('id', research.id);
     }
 
     if (!isEditing && pricing.totalCostEur > 0) {

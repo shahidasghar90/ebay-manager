@@ -119,6 +119,29 @@ export type ReturnCase = {
   notes: string | null;
 };
 
+export type ResearchItem = {
+  id: number;
+  keyword: string;
+  product_title: string | null;
+  category: string | null;
+  condition: string | null;
+  potential_model: 'Stock' | 'Dropship' | 'Used';
+  research_status: string;
+  platform: string | null;
+  supplier_platform: string | null;
+  main_listing_url: string | null;
+  image_url: string | null;
+  currency: 'EUR' | 'USD' | 'PKR';
+  product_price_local: number;
+  shipping_local: number;
+  moq: number | null;
+  lead_time_days: number | null;
+  dropship_available: boolean;
+  seller_supplier: string | null;
+  notes: string | null;
+  final_sku: string | null;
+};
+
 export type Settings = {
   fxRates: { EUR: number; USD: number; PKR: number };
   ebayFeePercent: number;
