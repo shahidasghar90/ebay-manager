@@ -12,7 +12,8 @@ const NAV_ITEMS = [
   { href: '/research', label: 'Product Research', icon: '⌕' },
   { href: '/inventory', label: 'Inventory', icon: '▣' },
   { href: '/accounts', label: 'Accounts', icon: '$' },
-  { href: '/returns', label: 'Returns', icon: '↩' }
+  { href: '/returns', label: 'Returns', icon: '↩' },
+  { href: '/settings', label: 'Settings', icon: '⚙' }
 ];
 
 type SidebarProps = {
