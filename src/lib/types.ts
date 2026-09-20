@@ -105,6 +105,8 @@ export type AccountTx = {
   category: string;
   amount_eur: number;
   direction: 'In' | 'Out';
+  vat_rate_percent: number | null;
+  vat_amount_eur: number | null;
   notes: string | null;
 };
 
@@ -147,4 +149,6 @@ export type Settings = {
   ebayFeePercent: number;
   paymentFeePercent: number;
   fixedPaymentFeeEur: number;
+  vatRegistered: boolean;
+  vatRatePercent: number;
 };

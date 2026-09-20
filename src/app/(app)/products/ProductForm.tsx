@@ -140,7 +140,9 @@ export default function ProductForm({
     fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
     ebayFeePercent: 0.129,
     paymentFeePercent: 0.029,
-    fixedPaymentFeeEur: 0.35
+    fixedPaymentFeeEur: 0.35,
+    vatRegistered: false,
+    vatRatePercent: 19
   });
   const [images, setImages] = useState<{ url: string; path: string }[]>(() => {
     if (product?.image_urls?.length) {
