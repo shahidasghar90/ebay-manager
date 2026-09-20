@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
 import { calculatePricing } from '@/lib/pricing';
+import { calculateVatAmount } from '@/lib/vat';
 import { formatMoney } from '@/lib/format';
 import type { Product, ResearchItem, Settings } from '@/lib/types';
 
@@ -340,6 +341,10 @@ export default function ProductForm({
         category: 'Inventory',
         amount_eur: pricing.totalCostEur,
         direction: 'Out',
+        vat_rate_percent: settings.vatRegistered ? settings.vatRatePercent : null,
+        vat_amount_eur: settings.vatRegistered
+          ? calculateVatAmount(pricing.totalCostEur, settings.vatRatePercent)
+          : null,
         notes: `Auto: purchase cost for ${sku} (${form.productName})`
       });
     }
