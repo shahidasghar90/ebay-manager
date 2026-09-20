@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { formatMoney, statusClassName } from '@/lib/format';
+import { summarizeCompetitorPrices } from '@/lib/competitorStats';
 import type { ResearchItem } from '@/lib/types';
 
 export default function ResearchTable({ items }: { items: ResearchItem[] }) {
@@ -18,6 +19,7 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
               <th className="p-3">Keyword</th>
               <th className="p-3">Model</th>
               <th className="p-3">Price</th>
+              <th className="p-3">Competitor Min/Avg/Max</th>
               <th className="p-3">Status</th>
               <th className="p-3">Actions</th>
             </tr>
@@ -28,6 +30,13 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                 <td className="p-3">{item.keyword}</td>
                 <td className="p-3">{item.potential_model}</td>
                 <td className="p-3">{formatMoney(item.product_price_local)}</td>
+                <td className="p-3">
+                  {(() => {
+                    const stats = summarizeCompetitorPrices(item.competitor_prices || []);
+                    if (stats.min == null) return '—';
+                    return `${formatMoney(stats.min)} / ${formatMoney(stats.avg!)} / ${formatMoney(stats.max!)}`;
+                  })()}
+                </td>
                 <td className="p-3">
                   <span className={statusClassName(item.research_status)}>
                     {item.research_status}

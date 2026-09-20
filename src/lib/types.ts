@@ -140,6 +140,7 @@ export type ResearchItem = {
   lead_time_days: number | null;
   dropship_available: boolean;
   seller_supplier: string | null;
+  competitor_prices: { platform: string; price: number }[];
   notes: string | null;
   final_sku: string | null;
 };
