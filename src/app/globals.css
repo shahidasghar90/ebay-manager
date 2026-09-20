@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-page text-text;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.card {
+  @apply bg-card border border-border rounded-card shadow-sm;
+}
+
+.status-badge {
+  @apply inline-block rounded-full px-2 py-1 text-[11px] font-bold;
+}
+
+.status-active,
+.status-delivered,
+.status-resolved {
+  @apply bg-[#dcfce7] text-[#166534];
+}
+
+.status-research,
+.status-processing,
+.status-open {
+  @apply bg-[#fef3c7] text-[#92400e];
+}
+
+.status-paused,
+.status-cancelled,
+.status-rejected,
+.status-archived {
+  @apply bg-[#fee2e2] text-[#991b1b];
+}
+
+.field-label {
+  @apply grid gap-1.5 text-[13px] font-bold text-slate-700;
+}
+
+.field-input {
+  @apply w-full rounded-md border border-slate-300 px-2.5 py-2 text-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-blue;
+}
+
+.btn-primary {
+  @apply rounded-lg bg-blue px-3.5 py-2.5 font-bold text-white hover:bg-blue-dark transition-colors;
+}
+
+.btn-secondary {
+  @apply rounded-lg bg-white border border-border px-3.5 py-2.5 font-bold text-text hover:border-blue hover:text-blue transition-colors;
+}

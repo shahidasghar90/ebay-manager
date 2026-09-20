@@ -1,0 +1,127 @@
+export type Product = {
+  sku: string;
+  product_name: string;
+  category: string | null;
+  condition: 'New' | 'Used' | 'Refurbished';
+  business_model: 'Stock' | 'Dropship' | 'Hybrid';
+  product_status: 'Research' | 'Active' | 'Paused' | 'Out of Stock' | 'Archived';
+  sales_platform: string;
+  supplier_name: string | null;
+  supplier_platform: string | null;
+  supplier_link: string | null;
+  main_ebay_listing_url: string | null;
+  image_urls: string[];
+  image_file_ids: string[];
+  support_link_1: string | null;
+  support_link_2: string | null;
+  support_link_3: string | null;
+  source_currency: string;
+  fx_rate: number;
+  purchase_price_local: number;
+  purchase_price_eur: number;
+  shipping_local: number;
+  shipping_eur: number;
+  customs_eur: number;
+  packaging_eur: number;
+  refurbishment_eur: number;
+  dropship_customer_shipping_eur: number;
+  dropship_handling_fee_eur: number;
+  total_cost_eur: number;
+  ebay_fee_percent: number;
+  payment_fee_percent: number;
+  fixed_payment_fee_eur: number;
+  target_profit_percent: number;
+  recommended_sale_price_eur: number;
+  minimum_sale_price_eur: number;
+  current_sale_price_eur: number;
+  estimated_ebay_fee_eur: number;
+  estimated_payment_fee_eur: number;
+  estimated_net_profit_eur: number;
+  estimated_profit_margin: number;
+  supplier_moq: number | null;
+  lead_time_days: number | null;
+  dropship_supported: boolean;
+  acquisition_source: string | null;
+  acquisition_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Order = {
+  order_id: string;
+  order_date: string;
+  sales_platform: string;
+  buyer_username: string | null;
+  sku: string | null;
+  product_name: string | null;
+  condition: string | null;
+  quantity: number;
+  sale_currency: string;
+  fx_rate: number;
+  item_price_local: number;
+  shipping_charged_local: number;
+  gross_sale_eur: number;
+  fulfillment_type: string;
+  order_status: string;
+  ebay_fee_percent: number;
+  ebay_fee_eur: number;
+  payment_fee_percent: number;
+  fixed_payment_fee_eur: number;
+  payment_fee_eur: number;
+  product_cost_eur: number;
+  shipping_packaging_cost_eur: number;
+  total_order_cost_eur: number;
+  net_profit_eur: number;
+  net_margin: number;
+  carrier: string | null;
+  buyer_tracking_number: string | null;
+  delivered_date: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type InventoryItem = {
+  id: string;
+  sku: string;
+  product_name: string;
+  variant: string | null;
+  inventory_type: 'On Hand' | 'Dropship' | 'Virtual';
+  location_bin: string | null;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  reorder_level: number;
+  supplier_name: string | null;
+  supplier_link: string | null;
+  lead_time_days: number | null;
+  last_restock_date: string | null;
+  notes: string | null;
+};
+
+export type AccountTx = {
+  tx_id: string;
+  tx_date: string;
+  type: string;
+  category: string;
+  amount_eur: number;
+  direction: 'In' | 'Out';
+  notes: string | null;
+};
+
+export type ReturnCase = {
+  case_id: string;
+  order_id: string | null;
+  case_date: string;
+  reason: string;
+  status: 'Open' | 'Resolved' | 'Rejected';
+  refund_eur: number;
+  net_loss_eur: number;
+  notes: string | null;
+};
+
+export type Settings = {
+  fxRates: { EUR: number; USD: number; PKR: number };
+  ebayFeePercent: number;
+  paymentFeePercent: number;
+  fixedPaymentFeeEur: number;
+};
