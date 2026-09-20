@@ -10,12 +10,8 @@ const DEFAULT_SETTINGS: Settings = {
   vatRatePercent: 19
 };
 
-export async function fetchSettings(supabase: SupabaseClient): Promise<Settings> {
-  const { data } = await supabase.from('settings').select('key, value');
-
-  if (!data) return DEFAULT_SETTINGS;
-
-  const byKey = Object.fromEntries(data.map((row) => [row.key, Number(row.value)]));
+export function mapSettingsRows(rows: { key: string; value: number }[]): Settings {
+  const byKey = Object.fromEntries(rows.map((row) => [row.key, Number(row.value)]));
 
   return {
     fxRates: {
@@ -26,7 +22,15 @@ export async function fetchSettings(supabase: SupabaseClient): Promise<Settings>
     ebayFeePercent: byKey.ebay_fee_percent ?? DEFAULT_SETTINGS.ebayFeePercent,
     paymentFeePercent: byKey.payment_fee_percent ?? DEFAULT_SETTINGS.paymentFeePercent,
     fixedPaymentFeeEur: byKey.fixed_payment_fee_eur ?? DEFAULT_SETTINGS.fixedPaymentFeeEur,
-    vatRegistered: byKey.vat_registered ? true : DEFAULT_SETTINGS.vatRegistered,
+    vatRegistered: (byKey.vat_registered ?? 0) === 1,
     vatRatePercent: byKey.vat_rate_percent ?? DEFAULT_SETTINGS.vatRatePercent
   };
+}
+
+export async function fetchSettings(supabase: SupabaseClient): Promise<Settings> {
+  const { data } = await supabase.from('settings').select('key, value');
+
+  if (!data) return DEFAULT_SETTINGS;
+
+  return mapSettingsRows(data as { key: string; value: number }[]);
 }
