@@ -18,7 +18,9 @@ insert into settings (key, value) values
   ('fx_pkr', 310),
   ('ebay_fee_percent', 0.129),
   ('payment_fee_percent', 0.029),
-  ('fixed_payment_fee_eur', 0.35)
+  ('fixed_payment_fee_eur', 0.35),
+  ('vat_registered', 0),
+  ('vat_rate_percent', 19)
 on conflict (key) do nothing;
 
 -- ---------------------------------------------------------------------
@@ -174,6 +176,7 @@ create table if not exists product_research (
   lead_time_days integer default 0,
   dropship_available boolean not null default false,
   seller_supplier text,
+  competitor_prices jsonb not null default '[]',
   notes text,
   final_sku text references products (sku) on delete set null,
   created_at timestamptz not null default now()
@@ -189,6 +192,8 @@ create table if not exists accounts (
   category text not null,
   amount_eur numeric not null,
   direction text not null check (direction in ('In', 'Out')),
+  vat_rate_percent numeric,
+  vat_amount_eur numeric,
   notes text,
   created_at timestamptz not null default now()
 );
