@@ -193,16 +193,11 @@ export default function ProductForm({
 
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files || []);
-    console.log('[handleImageSelect] fired, files:', selected.length, selected);
     event.target.value = '';
 
-    if (selected.length === 0) {
-      console.log('[handleImageSelect] no files selected, returning');
-      return;
-    }
+    if (selected.length === 0) return;
 
     const remaining = 5 - images.length;
-    console.log('[handleImageSelect] images.length:', images.length, 'remaining:', remaining);
 
     if (remaining <= 0) {
       setError('Maximum 5 photos per product. Remove one before adding another.');
@@ -219,13 +214,10 @@ export default function ProductForm({
         .map((segment) => segment.replace(/[\\/:*?"<>|]/g, '-'))
         .join('/');
       const path = `${folder}/${Date.now()}_${file.name}`;
-      console.log('[handleImageSelect] uploading to path:', path);
 
       const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(path, file, { upsert: false });
-
-      console.log('[handleImageSelect] upload result:', { uploadError });
 
       if (uploadError) {
         setError(uploadError.message);
@@ -233,15 +225,25 @@ export default function ProductForm({
       }
 
       const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(path);
-      console.log('[handleImageSelect] publicUrlData:', publicUrlData);
       setImages((prev) => [...prev, { url: publicUrlData.publicUrl, path }]);
     }
 
     setUploading(false);
   }
 
-  function removeImage(index: number) {
+  async function removeImage(index: number) {
+    const image = images[index];
     setImages((prev) => prev.filter((_, i) => i !== index));
+
+    if (image?.path) {
+      const { error: removeError } = await supabase.storage
+        .from('product-images')
+        .remove([image.path]);
+
+      if (removeError) {
+        console.error('Failed to delete image from storage:', removeError.message);
+      }
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
