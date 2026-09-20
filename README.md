@@ -1,4 +1,6 @@
-# eBay Manager (Next.js + Supabase)
+# TradePilot (Next.js + Supabase)
+
+Live at https://dinotradepilot.vercel.app.
 
 Rebuild of the Google Apps Script eBay Business Manager (still preserved under
 `Google Sheet/`) on a proper web stack: Next.js (App Router) on Vercel,

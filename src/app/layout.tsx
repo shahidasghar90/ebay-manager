@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'eBay Business Manager',
+  title: 'TradePilot',
   description: 'Products, orders, inventory and accounts for an eBay reselling business.'
 };
 

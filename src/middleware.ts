@@ -27,12 +27,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname.startsWith('/login');
+  const isForgotPasswordPage = request.nextUrl.pathname.startsWith('/forgot-password');
+  const isUpdatePasswordPage = request.nextUrl.pathname.startsWith('/update-password');
+  const isPublicPage = isLoginPage || isForgotPasswordPage || isUpdatePasswordPage;
 
-  if (!user && !isLoginPage) {
+  if (!user && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (user && isLoginPage) {
+  if (user && (isLoginPage || isForgotPasswordPage)) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
