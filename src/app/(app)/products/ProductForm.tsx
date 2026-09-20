@@ -309,6 +309,21 @@ export default function ProductForm({
       return;
     }
 
+    if (!isEditing) {
+      const { error: inventoryError } = await supabase.from('inventory').insert({
+        sku,
+        product_name: form.productName,
+        inventory_type: 'On Hand',
+        quantity_on_hand: 0,
+        quantity_reserved: 0,
+        reorder_level: 0
+      });
+
+      if (inventoryError) {
+        console.error('Failed to auto-create inventory row:', inventoryError.message);
+      }
+    }
+
     if (!isEditing && research) {
       await supabase
         .from('product_research')
