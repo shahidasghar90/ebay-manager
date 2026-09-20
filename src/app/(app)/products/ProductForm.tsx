@@ -192,10 +192,19 @@ export default function ProductForm({
   const showDropshipFields = form.businessModel === 'Dropship' || form.businessModel === 'Hybrid';
 
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || []).slice(0, 5 - images.length);
+    const selected = Array.from(event.target.files || []);
     event.target.value = '';
 
-    if (files.length === 0) return;
+    if (selected.length === 0) return;
+
+    const remaining = 5 - images.length;
+
+    if (remaining <= 0) {
+      setError('Maximum 5 photos per product. Remove one before adding another.');
+      return;
+    }
+
+    const files = selected.slice(0, remaining);
 
     setUploading(true);
     setError('');
@@ -465,7 +474,7 @@ export default function ProductForm({
             <input type="file" accept="image/*" multiple onChange={handleImageSelect} />
             <div className="flex flex-wrap gap-2.5 mt-2">
               {images.map((image, index) => (
-                <div key={image.path} className="relative w-[72px] h-[72px]">
+                <div key={`${image.path}-${index}`} className="relative w-[72px] h-[72px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image.url}
