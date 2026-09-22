@@ -43,12 +43,20 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                   </span>
                 </td>
                 <td className="p-3">
-                  <Link
-                    href={`/products/new?researchId=${item.id}`}
-                    className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                  >
-                    Convert to Product
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/research/${item.id}`}
+                      className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                    >
+                      Edit
+                    </Link>
+                    <Link
+                      href={`/products/new?researchId=${item.id}`}
+                      className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                    >
+                      Convert to Product
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

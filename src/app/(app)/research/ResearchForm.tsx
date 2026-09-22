@@ -3,20 +3,55 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import type { ResearchItem } from '@/lib/types';
 
-const initial = {
+type FormState = {
+  keyword: string;
+  productTitle: string;
+  category: string;
+  potentialModel: 'Stock' | 'Dropship' | 'Used';
+  currency: 'EUR' | 'USD' | 'PKR';
+  productPriceLocal: string;
+  shippingLocal: string;
+  mainListingUrl: string;
+  imageUrl: string;
+  competitorPrices: { platform: string; price: string }[];
+  notes: string;
+};
+
+const initial: FormState = {
   keyword: '',
   productTitle: '',
   category: '',
-  potentialModel: 'Stock' as 'Stock' | 'Dropship' | 'Used',
-  currency: 'EUR' as 'EUR' | 'USD' | 'PKR',
+  potentialModel: 'Stock',
+  currency: 'EUR',
   productPriceLocal: '',
   shippingLocal: '',
   mainListingUrl: '',
   imageUrl: '',
-  competitorPrices: [] as { platform: string; price: string }[],
+  competitorPrices: [],
   notes: ''
 };
+
+function stateFromResearch(research?: ResearchItem): FormState {
+  if (!research) return initial;
+  return {
+    keyword: research.keyword,
+    productTitle: research.product_title || '',
+    category: research.category || '',
+    potentialModel: research.potential_model,
+    currency: research.currency,
+    productPriceLocal: String(research.product_price_local ?? ''),
+    shippingLocal: String(research.shipping_local ?? ''),
+    mainListingUrl: research.main_listing_url || '',
+    imageUrl: research.image_url || '',
+    competitorPrices: (research.competitor_prices || []).map((row) => ({
+      platform: row.platform,
+      price: String(row.price)
+    })),
+    notes: research.notes || ''
+  };
+}
 
 function normalizeUrl(value: string) {
   const trimmed = value.trim();
@@ -25,12 +60,15 @@ function normalizeUrl(value: string) {
   return `https://${trimmed}`;
 }
 
-export default function ResearchForm() {
+export default function ResearchForm({ research }: { research?: ResearchItem }) {
+  const isEditing = !!research;
   const router = useRouter();
   const supabase = createClient();
-  const [form, setForm] = useState(initial);
+  const [form, setForm] = useState<FormState>(() => stateFromResearch(research));
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   function setField<K extends keyof typeof initial>(key: K, value: (typeof initial)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -52,6 +90,32 @@ export default function ResearchForm() {
     }));
   }
 
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    setError('');
+
+    const folder = form.keyword.replace(/[\\/:*?"<>|]/g, '-') || 'Uncategorized';
+    const path = `research/${folder}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(path, file, { upsert: false });
+
+    if (uploadError) {
+      setError(uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(path);
+    setField('imageUrl', publicUrlData.publicUrl);
+    setUploading(false);
+  }
+
   function removeCompetitorPrice(index: number) {
     setForm((prev) => ({
       ...prev,
@@ -64,7 +128,7 @@ export default function ResearchForm() {
     setSaving(true);
     setError('');
 
-    const { error: insertError } = await supabase.from('product_research').insert({
+    const payload = {
       keyword: form.keyword,
       product_title: form.productTitle || null,
       category: form.category || null,
@@ -78,12 +142,22 @@ export default function ResearchForm() {
         .filter((row) => row.platform && Number(row.price) > 0)
         .map((row) => ({ platform: row.platform, price: Number(row.price) })),
       notes: form.notes || null
-    });
+    };
+
+    const { error: saveError } = isEditing
+      ? await supabase.from('product_research').update(payload).eq('id', research!.id)
+      : await supabase.from('product_research').insert(payload);
 
     setSaving(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+
+    if (isEditing) {
+      router.push('/research');
+      router.refresh();
       return;
     }
 
@@ -94,7 +168,9 @@ export default function ResearchForm() {
   return (
     <form onSubmit={handleSubmit} className="card p-5 grid gap-3.5">
       <p className="text-muted text-sm -mt-1 mb-1">
-        Quick capture for a sourcing idea. Fill it out later as a full Product once it&apos;s worth pursuing.
+        {isEditing
+          ? 'Update this sourcing idea.'
+          : "Quick capture for a sourcing idea. Fill it out later as a full Product once it's worth pursuing."}
       </p>
 
       <div className="grid sm:grid-cols-2 gap-3.5">
@@ -180,12 +256,34 @@ export default function ResearchForm() {
 
         <label className="field-label sm:col-span-2">
           Image URL
-          <input
-            className="field-input"
-            type="url"
-            value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-          />
+          <div className="flex gap-2 items-start">
+            <input
+              className="field-input"
+              type="url"
+              value={form.imageUrl}
+              onChange={(e) => setField('imageUrl', e.target.value)}
+              placeholder="Paste an image URL or upload below"
+            />
+            <label className="btn-secondary whitespace-nowrap cursor-pointer">
+              {uploading ? 'Uploading...' : 'Upload'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={handleImageUpload}
+              />
+            </label>
+          </div>
+          {form.imageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={form.imageUrl}
+              alt="Preview"
+              onClick={() => setPreviewOpen(true)}
+              className="mt-2 w-[72px] h-[72px] object-cover rounded-lg border border-border cursor-zoom-in"
+            />
+          )}
         </label>
 
         <div className="field-label sm:col-span-2">
@@ -236,11 +334,36 @@ export default function ResearchForm() {
 
       {error && <p className="text-red font-semibold">{error}</p>}
 
-      <div className="flex justify-end">
-        <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? 'Saving...' : 'Save Research'}
+      <div className="flex justify-end gap-2">
+        {isEditing && (
+          <button type="button" className="btn-secondary" onClick={() => router.push('/research')}>
+            Cancel
+          </button>
+        )}
+        <button type="submit" className="btn-primary" disabled={saving || uploading}>
+          {saving
+            ? 'Saving...'
+            : uploading
+              ? 'Uploading image...'
+              : isEditing
+                ? 'Update Research'
+                : 'Save Research'}
         </button>
       </div>
+
+      {previewOpen && form.imageUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 cursor-zoom-out"
+          onClick={() => setPreviewOpen(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={form.imageUrl}
+            alt="Preview enlarged"
+            className="max-w-full max-h-full rounded-lg"
+          />
+        </div>
+      )}
     </form>
   );
 }
