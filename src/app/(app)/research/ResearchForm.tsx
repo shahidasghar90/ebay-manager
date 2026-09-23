@@ -13,6 +13,7 @@ type FormState = {
   currency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   productPriceLocal: string;
   shippingLocal: string;
+  moq: string;
   mainListingUrl: string;
   imageUrl: string;
   competitorPrices: { platform: string; price: string }[];
@@ -27,6 +28,7 @@ const initial: FormState = {
   currency: 'EUR',
   productPriceLocal: '',
   shippingLocal: '',
+  moq: '1',
   mainListingUrl: '',
   imageUrl: '',
   competitorPrices: [],
@@ -43,6 +45,7 @@ function stateFromResearch(research?: ResearchItem): FormState {
     currency: research.currency,
     productPriceLocal: String(research.product_price_local ?? ''),
     shippingLocal: String(research.shipping_local ?? ''),
+    moq: String(research.moq ?? 1),
     mainListingUrl: research.main_listing_url || '',
     imageUrl: research.image_url || '',
     competitorPrices: (research.competitor_prices || []).map((row) => ({
@@ -142,6 +145,7 @@ export default function ResearchForm({
       currency: form.currency,
       product_price_local: Number(form.productPriceLocal) || 0,
       shipping_local: Number(form.shippingLocal) || 0,
+      moq: Number(form.moq) || 1,
       main_listing_url: normalizeUrl(form.mainListingUrl),
       image_url: normalizeUrl(form.imageUrl),
       competitor_prices: form.competitorPrices
@@ -250,6 +254,24 @@ export default function ResearchForm({
             value={form.shippingLocal}
             onChange={(e) => setField('shippingLocal', e.target.value)}
           />
+        </label>
+
+        <label className="field-label">
+          Units (MOQ)
+          <input
+            className="field-input"
+            type="number"
+            min="1"
+            step="1"
+            value={form.moq}
+            onChange={(e) => setField('moq', e.target.value)}
+            placeholder="1"
+          />
+          {Number(form.productPriceLocal) > 0 && Number(form.moq) > 1 && (
+            <small className="text-muted font-normal text-[11px] -mt-0.5">
+              ≈ {(Number(form.productPriceLocal) / Number(form.moq)).toFixed(2)} {form.currency} per unit
+            </small>
+          )}
         </label>
 
         <label className="field-label sm:col-span-2">
