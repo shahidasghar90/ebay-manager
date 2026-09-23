@@ -15,7 +15,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email } = await request.json();
+    const { email, role } = await request.json();
+    const memberRole = role === 'viewer' || role === 'owner' ? role : 'member';
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -34,11 +35,17 @@ export async function POST(request: Request) {
       .from('workspace_members')
       .select('workspace_id, role')
       .eq('user_id', user.id)
-      .eq('role', 'owner')
       .maybeSingle();
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Only the workspace owner can invite members' }, { status: 403 });
+    if (!membership || membership.role === 'viewer') {
+      return NextResponse.json({ error: 'You do not have permission to invite members' }, { status: 403 });
+    }
+
+    if (membership.role === 'member' && memberRole !== 'viewer') {
+      return NextResponse.json(
+        { error: 'Members can only invite viewers. Ask the owner to add an owner or member.' },
+        { status: 403 }
+      );
     }
 
     const admin = createAdminClient();
@@ -78,8 +85,8 @@ export async function POST(request: Request) {
     const { error: memberError } = await admin
       .from('workspace_members')
       .upsert(
-        { workspace_id: membership.workspace_id, user_id: targetUserId, role: 'member' },
-        { onConflict: 'workspace_id,user_id' }
+        { workspace_id: membership.workspace_id, user_id: targetUserId, role: memberRole },
+        { onConflict: 'workspace_id,user_id', ignoreDuplicates: true }
       );
 
     if (memberError) {

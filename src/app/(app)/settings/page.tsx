@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { mapSettingsRows } from '@/lib/settings';
 import SettingsForm from './SettingsForm';
 import TeamSettings from './TeamSettings';
+import ChangePassword from './ChangePassword';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export default async function SettingsPage() {
     <div className="grid gap-6">
       <PageHeader title="Settings" subtitle="FX rates, platform fees, and VAT mode" />
       <SettingsForm settings={settings} />
+      <ChangePassword />
       <TeamSettings />
     </div>
   );

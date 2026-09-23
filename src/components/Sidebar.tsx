@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -25,6 +26,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email || '');
+    });
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -87,6 +95,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="mt-auto pt-4 grid gap-3">
+          {email && (
+            <div className="text-xs text-slate-400 leading-relaxed">
+              <p className="m-0">Logged in as</p>
+              <p className="m-0 text-slate-200 break-all">{email}</p>
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="text-left text-sm font-semibold text-slate-300 hover:text-white"
