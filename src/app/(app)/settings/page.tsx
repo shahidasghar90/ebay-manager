@@ -2,6 +2,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { mapSettingsRows } from '@/lib/settings';
 import SettingsForm from './SettingsForm';
+import TeamSettings from './TeamSettings';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,10 @@ export default async function SettingsPage() {
   const settings = mapSettingsRows((data as { key: string; value: number }[]) || []);
 
   return (
-    <div>
+    <div className="grid gap-6">
       <PageHeader title="Settings" subtitle="FX rates, platform fees, and VAT mode" />
       <SettingsForm settings={settings} />
+      <TeamSettings />
     </div>
   );
 }

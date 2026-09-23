@@ -41,7 +41,9 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       { key: 'vat_rate_percent', value: num(vatRatePercent) }
     ];
 
-    const { error: saveError } = await supabase.from('settings').upsert(rows, { onConflict: 'key' });
+    const { error: saveError } = await supabase
+      .from('settings')
+      .upsert(rows, { onConflict: 'workspace_id,key' });
 
     setSaving(false);
 
