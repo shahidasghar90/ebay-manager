@@ -10,6 +10,8 @@ export type PricingInput = {
   refurbishmentEur: number;
   dropshipCustomerShippingEur: number;
   dropshipHandlingFeeEur: number;
+  fulfillmentFeeEur: number;
+  storageFeeEurPerMonth: number;
   ebayFeePercent: number;
   paymentFeePercent: number;
   fixedPaymentFeeEur: number;
@@ -46,7 +48,9 @@ export function calculatePricing(input: PricingInput): PricingResult {
       input.packagingEur +
       input.refurbishmentEur +
       input.dropshipCustomerShippingEur +
-      input.dropshipHandlingFeeEur
+      input.dropshipHandlingFeeEur +
+      input.fulfillmentFeeEur +
+      input.storageFeeEurPerMonth
   );
 
   const { ebayFeePercent, paymentFeePercent, fixedPaymentFeeEur, targetProfitPercent } = input;

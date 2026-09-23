@@ -3,7 +3,7 @@ export type Product = {
   product_name: string;
   category: string | null;
   condition: 'New' | 'Used' | 'Refurbished';
-  business_model: 'Stock' | 'Dropship' | 'Hybrid';
+  business_model: string;
   product_status: 'Research' | 'Active' | 'Paused' | 'Out of Stock' | 'Archived';
   sales_platform: string;
   supplier_name: string | null;
@@ -26,6 +26,8 @@ export type Product = {
   refurbishment_eur: number;
   dropship_customer_shipping_eur: number;
   dropship_handling_fee_eur: number;
+  fulfillment_fee_eur: number;
+  storage_fee_eur_per_month: number;
   total_cost_eur: number;
   ebay_fee_percent: number;
   payment_fee_percent: number;
@@ -143,6 +145,21 @@ export type ResearchItem = {
   competitor_prices: { platform: string; price: number }[];
   notes: string | null;
   final_sku: string | null;
+};
+
+export type SalesPlatform = {
+  code: string;
+  label: string;
+  selling_fee_percent: number;
+  payment_fee_percent: number;
+  fixed_payment_fee_eur: number;
+};
+
+export type FulfillmentModel = {
+  code: string;
+  label: string;
+  fulfillment_fee_eur: number;
+  storage_fee_eur_per_month: number;
 };
 
 export type Settings = {

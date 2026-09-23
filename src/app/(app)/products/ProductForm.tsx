@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
+import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfig';
 import { calculatePricing } from '@/lib/pricing';
 import { calculateVatAmount } from '@/lib/vat';
 import { formatMoney } from '@/lib/format';
-import type { Product, ResearchItem, Settings } from '@/lib/types';
+import type { Product, ResearchItem, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
 
 const CATEGORY_PRESETS = [
   'Electronics',
@@ -30,7 +31,7 @@ type FormState = {
   productName: string;
   category: string;
   condition: 'New' | 'Used' | 'Refurbished';
-  businessModel: 'Stock' | 'Dropship' | 'Hybrid';
+  businessModel: string;
   productStatus: string;
   salesPlatform: string;
   supplierName: string;
@@ -45,6 +46,8 @@ type FormState = {
   refurbishmentEur: string;
   dropshipCustomerShippingEur: string;
   dropshipHandlingFeeEur: string;
+  fulfillmentFeeEur: string;
+  storageFeeEurPerMonth: string;
   currentSalePriceEur: string;
   targetProfitPercent: string;
   supplierMoq: string;
@@ -62,8 +65,7 @@ function initialStateFromProduct(product?: Product, research?: ResearchItem): Fo
       productName: research.product_title || research.keyword,
       category: research.category || '',
       condition: research.potential_model === 'Used' ? 'Used' : 'New',
-      businessModel:
-        research.potential_model === 'Used' ? 'Stock' : (research.potential_model as 'Stock' | 'Dropship'),
+      businessModel: research.potential_model === 'Used' ? 'Stock' : research.potential_model,
       productStatus: 'Research',
       salesPlatform: 'eBay_DE',
       supplierName: research.seller_supplier || '',
@@ -78,6 +80,8 @@ function initialStateFromProduct(product?: Product, research?: ResearchItem): Fo
       refurbishmentEur: '',
       dropshipCustomerShippingEur: '',
       dropshipHandlingFeeEur: '',
+      fulfillmentFeeEur: '',
+      storageFeeEurPerMonth: '',
       currentSalePriceEur: '',
       targetProfitPercent: '0.25',
       supplierMoq: String(research.moq ?? 1),
@@ -109,6 +113,8 @@ function initialStateFromProduct(product?: Product, research?: ResearchItem): Fo
     refurbishmentEur: String(product?.refurbishment_eur ?? ''),
     dropshipCustomerShippingEur: String(product?.dropship_customer_shipping_eur ?? ''),
     dropshipHandlingFeeEur: String(product?.dropship_handling_fee_eur ?? ''),
+    fulfillmentFeeEur: String(product?.fulfillment_fee_eur ?? ''),
+    storageFeeEurPerMonth: String(product?.storage_fee_eur_per_month ?? ''),
     currentSalePriceEur: String(product?.current_sale_price_eur ?? ''),
     targetProfitPercent: String(product?.target_profit_percent ?? 0.25),
     supplierMoq: String(product?.supplier_moq ?? 1),
@@ -160,14 +166,31 @@ export default function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [salesPlatforms, setSalesPlatforms] = useState<SalesPlatform[]>([]);
+  const [fulfillmentModels, setFulfillmentModels] = useState<FulfillmentModel[]>([]);
 
   useEffect(() => {
     fetchSettings(supabase).then(setSettings);
+    fetchSalesPlatforms(supabase).then(setSalesPlatforms);
+    fetchFulfillmentModels(supabase).then(setFulfillmentModels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const selectedPlatform = salesPlatforms.find((platform) => platform.code === form.salesPlatform);
+  const selectedFulfillment = fulfillmentModels.find((model) => model.code === form.businessModel);
+
+  function handleFulfillmentChange(code: string) {
+    const model = fulfillmentModels.find((m) => m.code === code);
+    setForm((prev) => ({
+      ...prev,
+      businessModel: code,
+      fulfillmentFeeEur: model ? String(model.fulfillment_fee_eur) : prev.fulfillmentFeeEur,
+      storageFeeEurPerMonth: model ? String(model.storage_fee_eur_per_month) : prev.storageFeeEurPerMonth
+    }));
   }
 
   const pricing = useMemo(
@@ -182,17 +205,24 @@ export default function ProductForm({
         refurbishmentEur: num(form.refurbishmentEur),
         dropshipCustomerShippingEur: num(form.dropshipCustomerShippingEur),
         dropshipHandlingFeeEur: num(form.dropshipHandlingFeeEur),
-        ebayFeePercent: settings.ebayFeePercent,
-        paymentFeePercent: settings.paymentFeePercent,
-        fixedPaymentFeeEur: settings.fixedPaymentFeeEur,
+        fulfillmentFeeEur: num(form.fulfillmentFeeEur),
+        storageFeeEurPerMonth: num(form.storageFeeEurPerMonth),
+        ebayFeePercent: selectedPlatform?.selling_fee_percent ?? settings.ebayFeePercent,
+        paymentFeePercent: selectedPlatform?.payment_fee_percent ?? settings.paymentFeePercent,
+        fixedPaymentFeeEur: selectedPlatform?.fixed_payment_fee_eur ?? settings.fixedPaymentFeeEur,
         targetProfitPercent: num(form.targetProfitPercent),
         currentSalePriceEur: num(form.currentSalePriceEur)
       }),
-    [form, settings]
+    [form, settings, selectedPlatform]
   );
 
   const showRefurbishment = form.condition === 'Refurbished';
   const showDropshipFields = form.businessModel === 'Dropship' || form.businessModel === 'Hybrid';
+  const showFulfillmentFields =
+    (selectedFulfillment &&
+      (selectedFulfillment.fulfillment_fee_eur > 0 || selectedFulfillment.storage_fee_eur_per_month > 0)) ||
+    num(form.fulfillmentFeeEur) > 0 ||
+    num(form.storageFeeEurPerMonth) > 0;
 
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files || []);
@@ -281,10 +311,12 @@ export default function ProductForm({
       refurbishment_eur: num(form.refurbishmentEur),
       dropship_customer_shipping_eur: num(form.dropshipCustomerShippingEur),
       dropship_handling_fee_eur: num(form.dropshipHandlingFeeEur),
+      fulfillment_fee_eur: num(form.fulfillmentFeeEur),
+      storage_fee_eur_per_month: num(form.storageFeeEurPerMonth),
       total_cost_eur: pricing.totalCostEur,
-      ebay_fee_percent: settings.ebayFeePercent,
-      payment_fee_percent: settings.paymentFeePercent,
-      fixed_payment_fee_eur: settings.fixedPaymentFeeEur,
+      ebay_fee_percent: selectedPlatform?.selling_fee_percent ?? settings.ebayFeePercent,
+      payment_fee_percent: selectedPlatform?.payment_fee_percent ?? settings.paymentFeePercent,
+      fixed_payment_fee_eur: selectedPlatform?.fixed_payment_fee_eur ?? settings.fixedPaymentFeeEur,
       target_profit_percent: num(form.targetProfitPercent),
       recommended_sale_price_eur: pricing.recommendedSalePriceEur,
       minimum_sale_price_eur: pricing.minimumSalePriceEur,
@@ -373,273 +405,327 @@ export default function ProductForm({
         </div>
       </div>
 
-      <div className="card p-5">
-        <div className="grid sm:grid-cols-2 gap-3.5">
-          <label className="field-label">
-            Product Name *
-            <input
-              className="field-input"
-              required
-              value={form.productName}
-              onChange={(e) => setField('productName', e.target.value)}
-            />
-          </label>
-
-          <label className="field-label">
-            Category
-            <input
-              className="field-input"
-              list="categoryOptions"
-              value={form.category}
-              onChange={(e) => setField('category', e.target.value)}
-              placeholder="Select or type a new category"
-            />
-            <datalist id="categoryOptions">
-              {CATEGORY_PRESETS.map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
-          </label>
-
-          <label className="field-label">
-            Condition *
-            <select
-              className="field-input"
-              value={form.condition}
-              onChange={(e) => setField('condition', e.target.value as FormState['condition'])}
-            >
-              <option value="New">New</option>
-              <option value="Used">Used</option>
-              <option value="Refurbished">Refurbished</option>
-            </select>
-          </label>
-
-          <label className="field-label">
-            Business Model *
-            <select
-              className="field-input"
-              value={form.businessModel}
-              onChange={(e) => setField('businessModel', e.target.value as FormState['businessModel'])}
-            >
-              <option value="Stock">Stock</option>
-              <option value="Dropship">Dropship</option>
-              <option value="Hybrid">Hybrid</option>
-            </select>
-          </label>
-
-          <label className="field-label">
-            Product Status
-            <select
-              className="field-input"
-              value={form.productStatus}
-              onChange={(e) => setField('productStatus', e.target.value)}
-            >
-              <option value="Research">Research</option>
-              <option value="Active">Active</option>
-              <option value="Paused">Paused</option>
-              <option value="Out of Stock">Out of Stock</option>
-            </select>
-          </label>
-
-          <label className="field-label">
-            Sales Platform *
-            <select
-              className="field-input"
-              value={form.salesPlatform}
-              onChange={(e) => setField('salesPlatform', e.target.value)}
-            >
-              <option value="eBay_DE">eBay Germany</option>
-              <option value="eBay_US">eBay USA</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-
-          <label className="field-label">
-            Supplier Name
-            <input
-              className="field-input"
-              value={form.supplierName}
-              onChange={(e) => setField('supplierName', e.target.value)}
-            />
-          </label>
-
-          <label className="field-label">
-            Supplier Platform
-            <select
-              className="field-input"
-              value={form.supplierPlatform}
-              onChange={(e) => setField('supplierPlatform', e.target.value)}
-            >
-              <option value="">Select supplier platform</option>
-              <option value="AliExpress">AliExpress</option>
-              <option value="Alibaba">Alibaba</option>
-              <option value="Kleinanzeigen">Kleinanzeigen</option>
-              <option value="Local">Local</option>
-              <option value="Wholesale">Wholesale</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-
-          <label className="field-label sm:col-span-2">
-            Supplier Product Link
-            <input
-              className="field-input"
-              type="url"
-              value={form.supplierLink}
-              onChange={(e) => setField('supplierLink', e.target.value)}
-              placeholder="https://..."
-            />
-          </label>
-
-          <label className="field-label sm:col-span-2">
-            Main eBay Listing Link
-            <input
-              className="field-input"
-              type="url"
-              value={form.mainEbayListingUrl}
-              onChange={(e) => setField('mainEbayListingUrl', e.target.value)}
-              placeholder="https://www.ebay.de/itm/..."
-            />
-          </label>
-
-          <label className="field-label sm:col-span-2">
-            Product Photos (up to 5)
-            <input type="file" accept="image/*" multiple onChange={handleImageSelect} />
-            <div className="flex flex-wrap gap-2.5 mt-2">
-              {images.map((image, index) => (
-                <div key={`${image.path}-${index}`} className="relative w-[72px] h-[72px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.url}
-                    alt=""
-                    className="w-full h-full object-cover rounded-lg border border-border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red text-white text-[11px] border-2 border-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          </label>
-
-          <label className="field-label">
-            Source Currency *
-            <select
-              className="field-input"
-              value={form.currency}
-              onChange={(e) => setField('currency', e.target.value as FormState['currency'])}
-            >
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="PKR">PKR</option>
-              <option value="CNY">CNY</option>
-            </select>
-          </label>
-
-          <NumberField label="Purchase Price (local currency)" value={form.purchasePriceLocal} onChange={(v) => setField('purchasePriceLocal', v)} />
-          <NumberField label="Shipping to You (local currency)" value={form.shippingLocal} onChange={(v) => setField('shippingLocal', v)} />
-          <NumberField
-            label="Customs / Duty (EUR)"
-            value={form.customsEur}
-            onChange={(v) => setField('customsEur', v)}
-            hint="Leave 0 for local/domestic suppliers - only applies to international imports."
+      <FormSection title="Basic Info">
+        <label className="field-label">
+          Product Name *
+          <input
+            className="field-input"
+            required
+            value={form.productName}
+            onChange={(e) => setField('productName', e.target.value)}
           />
-          <NumberField label="Packaging (EUR)" value={form.packagingEur} onChange={(v) => setField('packagingEur', v)} />
+        </label>
 
-          {showRefurbishment && (
+        <label className="field-label">
+          Category
+          <input
+            className="field-input"
+            list="categoryOptions"
+            value={form.category}
+            onChange={(e) => setField('category', e.target.value)}
+            placeholder="Select or type a new category"
+          />
+          <datalist id="categoryOptions">
+            {CATEGORY_PRESETS.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+        </label>
+
+        <label className="field-label">
+          Condition *
+          <select
+            className="field-input"
+            value={form.condition}
+            onChange={(e) => setField('condition', e.target.value as FormState['condition'])}
+          >
+            <option value="New">New</option>
+            <option value="Used">Used</option>
+            <option value="Refurbished">Refurbished</option>
+          </select>
+        </label>
+
+        <label className="field-label">
+          Product Status
+          <select
+            className="field-input"
+            value={form.productStatus}
+            onChange={(e) => setField('productStatus', e.target.value)}
+          >
+            <option value="Research">Research</option>
+            <option value="Active">Active</option>
+            <option value="Paused">Paused</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+        </label>
+      </FormSection>
+
+      <FormSection
+        title="Platform & Fulfillment"
+        hint="Where you sell it, and how it gets to the buyer."
+      >
+        <label className="field-label">
+          Sales Platform *
+          <select
+            className="field-input"
+            value={form.salesPlatform}
+            onChange={(e) => setField('salesPlatform', e.target.value)}
+          >
+            {salesPlatforms.length === 0 && <option value={form.salesPlatform}>{form.salesPlatform}</option>}
+            {salesPlatforms.map((platform) => (
+              <option key={platform.code} value={platform.code}>
+                {platform.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field-label">
+          Fulfillment Model *
+          <select
+            className="field-input"
+            value={form.businessModel}
+            onChange={(e) => handleFulfillmentChange(e.target.value)}
+          >
+            {fulfillmentModels.length === 0 && <option value={form.businessModel}>{form.businessModel}</option>}
+            {fulfillmentModels.map((model) => (
+              <option key={model.code} value={model.code}>
+                {model.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field-label sm:col-span-2">
+          Main eBay Listing Link
+          <input
+            className="field-input"
+            type="url"
+            value={form.mainEbayListingUrl}
+            onChange={(e) => setField('mainEbayListingUrl', e.target.value)}
+            placeholder="https://www.ebay.de/itm/..."
+          />
+        </label>
+
+        {showDropshipFields && (
+          <>
             <NumberField
-              label="Refurbishment Cost (EUR)"
-              value={form.refurbishmentEur}
-              onChange={(v) => setField('refurbishmentEur', v)}
-              hint="Only applies when Condition is Refurbished."
+              label="Dropship Customer Shipping (EUR)"
+              value={form.dropshipCustomerShippingEur}
+              onChange={(v) => setField('dropshipCustomerShippingEur', v)}
             />
-          )}
+            <NumberField
+              label="Dropship Handling Fee (EUR)"
+              value={form.dropshipHandlingFeeEur}
+              onChange={(v) => setField('dropshipHandlingFeeEur', v)}
+            />
+            <label className="field-label">
+              Dropship Supported?
+              <select
+                className="field-input"
+                value={form.dropshipSupported ? 'Yes' : 'No'}
+                onChange={(e) => setField('dropshipSupported', e.target.value === 'Yes')}
+              >
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </label>
+          </>
+        )}
 
-          {showDropshipFields && (
-            <>
-              <NumberField
-                label="Dropship Customer Shipping (EUR)"
-                value={form.dropshipCustomerShippingEur}
-                onChange={(v) => setField('dropshipCustomerShippingEur', v)}
-              />
-              <NumberField
-                label="Dropship Handling Fee (EUR)"
-                value={form.dropshipHandlingFeeEur}
-                onChange={(v) => setField('dropshipHandlingFeeEur', v)}
-              />
-              <label className="field-label">
-                Dropship Supported?
-                <select
-                  className="field-input"
-                  value={form.dropshipSupported ? 'Yes' : 'No'}
-                  onChange={(e) => setField('dropshipSupported', e.target.value === 'Yes')}
+        {showFulfillmentFields && (
+          <>
+            <NumberField
+              label="Fulfillment Fee (EUR)"
+              value={form.fulfillmentFeeEur}
+              onChange={(v) => setField('fulfillmentFeeEur', v)}
+              hint="Per-unit fee charged by the fulfillment provider (e.g. Amazon FBA, 3PL)."
+            />
+            <NumberField
+              label="Storage Fee / month (EUR)"
+              value={form.storageFeeEurPerMonth}
+              onChange={(v) => setField('storageFeeEurPerMonth', v)}
+            />
+          </>
+        )}
+      </FormSection>
+
+      <FormSection title="Supplier / Sourcing">
+        <label className="field-label">
+          Supplier Name
+          <input
+            className="field-input"
+            value={form.supplierName}
+            onChange={(e) => setField('supplierName', e.target.value)}
+          />
+        </label>
+
+        <label className="field-label">
+          Supplier Platform
+          <select
+            className="field-input"
+            value={form.supplierPlatform}
+            onChange={(e) => setField('supplierPlatform', e.target.value)}
+          >
+            <option value="">Select supplier platform</option>
+            <option value="AliExpress">AliExpress</option>
+            <option value="Alibaba">Alibaba</option>
+            <option value="Kleinanzeigen">Kleinanzeigen</option>
+            <option value="Local">Local</option>
+            <option value="Wholesale">Wholesale</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+
+        <label className="field-label sm:col-span-2">
+          Supplier Product Link
+          <input
+            className="field-input"
+            type="url"
+            value={form.supplierLink}
+            onChange={(e) => setField('supplierLink', e.target.value)}
+            placeholder="https://..."
+          />
+        </label>
+
+        <label className="field-label">
+          Acquisition Source
+          <input
+            className="field-input"
+            value={form.acquisitionSource}
+            onChange={(e) => setField('acquisitionSource', e.target.value)}
+            placeholder="Alibaba, Local, Kleinanzeigen"
+          />
+        </label>
+
+        <label className="field-label">
+          Acquisition Date
+          <input
+            className="field-input"
+            type="date"
+            value={form.acquisitionDate}
+            onChange={(e) => setField('acquisitionDate', e.target.value)}
+          />
+        </label>
+
+        <NumberField
+          label="Supplier MOQ"
+          value={form.supplierMoq}
+          onChange={(v) => setField('supplierMoq', v)}
+          hint="Bulk import suppliers only - leave at 1 for a single local/used purchase."
+        />
+        <NumberField
+          label="Lead Time (days)"
+          value={form.leadTimeDays}
+          onChange={(v) => setField('leadTimeDays', v)}
+          hint="Shipping/production time from supplier - usually 0 for local pickup."
+        />
+      </FormSection>
+
+      <FormSection title="Photos">
+        <label className="field-label sm:col-span-2">
+          Product Photos (up to 5)
+          <input type="file" accept="image/*" multiple onChange={handleImageSelect} />
+          <div className="flex flex-wrap gap-2.5 mt-2">
+            {images.map((image, index) => (
+              <div key={`${image.path}-${index}`} className="relative w-[72px] h-[72px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image.url}
+                  alt=""
+                  className="w-full h-full object-cover rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red text-white text-[11px] border-2 border-white"
                 >
-                  <option value="No">No</option>
-                  <option value="Yes">Yes</option>
-                </select>
-              </label>
-            </>
-          )}
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </label>
+      </FormSection>
 
-          <label className="field-label">
-            Acquisition Date
-            <input
-              className="field-input"
-              type="date"
-              value={form.acquisitionDate}
-              onChange={(e) => setField('acquisitionDate', e.target.value)}
-            />
-          </label>
+      <FormSection title="Costing" hint="What it costs you, and what you plan to sell it for.">
+        <label className="field-label">
+          Source Currency *
+          <select
+            className="field-input"
+            value={form.currency}
+            onChange={(e) => setField('currency', e.target.value as FormState['currency'])}
+          >
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="PKR">PKR</option>
+            <option value="CNY">CNY</option>
+          </select>
+        </label>
 
-          <NumberField label="Current Sale Price (EUR)" value={form.currentSalePriceEur} onChange={(v) => setField('currentSalePriceEur', v)} />
-          <NumberField label="Target Profit %" value={form.targetProfitPercent} onChange={(v) => setField('targetProfitPercent', v)} step="0.01" />
+        <NumberField label="Purchase Price (local currency)" value={form.purchasePriceLocal} onChange={(v) => setField('purchasePriceLocal', v)} />
+        <NumberField label="Shipping to You (local currency)" value={form.shippingLocal} onChange={(v) => setField('shippingLocal', v)} />
+        <NumberField
+          label="Customs / Duty (EUR)"
+          value={form.customsEur}
+          onChange={(v) => setField('customsEur', v)}
+          hint="Leave 0 for local/domestic suppliers - only applies to international imports."
+        />
+        <NumberField label="Packaging (EUR)" value={form.packagingEur} onChange={(v) => setField('packagingEur', v)} />
+
+        {showRefurbishment && (
           <NumberField
-            label="Supplier MOQ"
-            value={form.supplierMoq}
-            onChange={(v) => setField('supplierMoq', v)}
-            hint="Bulk import suppliers only - leave at 1 for a single local/used purchase."
+            label="Refurbishment Cost (EUR)"
+            value={form.refurbishmentEur}
+            onChange={(v) => setField('refurbishmentEur', v)}
+            hint="Only applies when Condition is Refurbished."
           />
-          <NumberField
-            label="Lead Time (days)"
-            value={form.leadTimeDays}
-            onChange={(v) => setField('leadTimeDays', v)}
-            hint="Shipping/production time from supplier - usually 0 for local pickup."
+        )}
+
+        <NumberField label="Current Sale Price (EUR)" value={form.currentSalePriceEur} onChange={(v) => setField('currentSalePriceEur', v)} />
+        <NumberField label="Target Profit %" value={form.targetProfitPercent} onChange={(v) => setField('targetProfitPercent', v)} step="0.01" />
+      </FormSection>
+
+      <FormSection title="Notes">
+        <label className="field-label sm:col-span-2">
+          Notes
+          <textarea
+            className="field-input"
+            rows={4}
+            value={form.notes}
+            onChange={(e) => setField('notes', e.target.value)}
           />
+        </label>
+      </FormSection>
 
-          <label className="field-label">
-            Acquisition Source
-            <input
-              className="field-input"
-              value={form.acquisitionSource}
-              onChange={(e) => setField('acquisitionSource', e.target.value)}
-              placeholder="Alibaba, Local, Kleinanzeigen"
-            />
-          </label>
+      {error && <p className="text-red font-semibold">{error}</p>}
 
-          <label className="field-label sm:col-span-2">
-            Notes
-            <textarea
-              className="field-input"
-              rows={4}
-              value={form.notes}
-              onChange={(e) => setField('notes', e.target.value)}
-            />
-          </label>
-        </div>
-
-        {error && <p className="text-red font-semibold mt-4">{error}</p>}
-
-        <div className="flex justify-end gap-2.5 mt-5 pt-4 border-t border-border">
-          <button type="submit" className="btn-primary" disabled={saving || uploading}>
-            {saving ? 'Saving...' : uploading ? 'Uploading image...' : isEditing ? 'Update Product' : 'Save Product'}
-          </button>
-        </div>
+      <div className="flex justify-end gap-2.5">
+        <button type="submit" className="btn-primary" disabled={saving || uploading}>
+          {saving ? 'Saving...' : uploading ? 'Uploading image...' : isEditing ? 'Update Product' : 'Save Product'}
+        </button>
       </div>
     </form>
+  );
+}
+
+function FormSection({
+  title,
+  hint,
+  children
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="card p-5">
+      <div className="mb-3.5">
+        <h3 className="font-bold text-base m-0">{title}</h3>
+        {hint && <p className="text-muted text-[13px] mt-0.5 m-0">{hint}</p>}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3.5">{children}</div>
+    </div>
   );
 }
 

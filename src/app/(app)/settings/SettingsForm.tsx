@@ -12,9 +12,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
   const [fxUsd, setFxUsd] = useState(String(settings.fxRates.USD));
   const [fxPkr, setFxPkr] = useState(String(settings.fxRates.PKR));
   const [fxCny, setFxCny] = useState(String(settings.fxRates.CNY));
-  const [ebayFeePercent, setEbayFeePercent] = useState(String(settings.ebayFeePercent));
-  const [paymentFeePercent, setPaymentFeePercent] = useState(String(settings.paymentFeePercent));
-  const [fixedPaymentFeeEur, setFixedPaymentFeeEur] = useState(String(settings.fixedPaymentFeeEur));
   const [vatRegistered, setVatRegistered] = useState(settings.vatRegistered);
   const [vatRatePercent, setVatRatePercent] = useState(String(settings.vatRatePercent));
   const [saving, setSaving] = useState(false);
@@ -44,9 +41,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       { key: 'fx_usd', value: num(fxUsd) },
       { key: 'fx_pkr', value: num(fxPkr) },
       { key: 'fx_cny', value: num(fxCny) },
-      { key: 'ebay_fee_percent', value: num(ebayFeePercent) },
-      { key: 'payment_fee_percent', value: num(paymentFeePercent) },
-      { key: 'fixed_payment_fee_eur', value: num(fixedPaymentFeeEur) },
       { key: 'vat_registered', value: vatRegistered ? 1 : 0 },
       { key: 'vat_rate_percent', value: num(vatRatePercent) }
     ].map((row) => ({ ...row, workspace_id: workspaceId }));
@@ -102,39 +96,12 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
           />
         </label>
 
-        <label className="field-label">
-          eBay Fee %
-          <input
-            className="field-input"
-            type="number"
-            step="0.001"
-            value={ebayFeePercent}
-            onChange={(e) => setEbayFeePercent(e.target.value)}
-          />
-        </label>
-
-        <label className="field-label">
-          Payment Fee %
-          <input
-            className="field-input"
-            type="number"
-            step="0.001"
-            value={paymentFeePercent}
-            onChange={(e) => setPaymentFeePercent(e.target.value)}
-          />
-        </label>
-
-        <label className="field-label">
-          Fixed Payment Fee (EUR)
-          <input
-            className="field-input"
-            type="number"
-            step="0.01"
-            value={fixedPaymentFeeEur}
-            onChange={(e) => setFixedPaymentFeeEur(e.target.value)}
-          />
-        </label>
       </div>
+
+      <p className="text-muted text-[13px] -mt-1">
+        Selling fee %, payment fee %, and fulfillment fees are now configured per platform below,
+        not globally.
+      </p>
 
       <div className="border-t border-border pt-3.5 grid sm:grid-cols-2 gap-3.5">
         <label className="field-label flex-row items-center gap-2.5 flex cursor-pointer">

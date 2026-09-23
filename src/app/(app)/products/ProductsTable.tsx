@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { fetchFulfillmentModels } from '@/lib/platformConfig';
 import { formatMoney, statusClassName } from '@/lib/format';
-import type { Product } from '@/lib/types';
+import type { FulfillmentModel, Product } from '@/lib/types';
 
 export default function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -15,6 +16,12 @@ export default function ProductsTable({ products }: { products: Product[] }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
   const [modelFilter, setModelFilter] = useState('');
+  const [fulfillmentModels, setFulfillmentModels] = useState<FulfillmentModel[]>([]);
+
+  useEffect(() => {
+    fetchFulfillmentModels(supabase).then(setFulfillmentModels);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -80,9 +87,11 @@ export default function ProductsTable({ products }: { products: Product[] }) {
 
         <select className="field-input w-auto min-w-[150px]" value={modelFilter} onChange={(e) => setModelFilter(e.target.value)}>
           <option value="">All Models</option>
-          <option value="Stock">Stock</option>
-          <option value="Dropship">Dropship</option>
-          <option value="Hybrid">Hybrid</option>
+          {fulfillmentModels.map((model) => (
+            <option key={model.code} value={model.code}>
+              {model.label}
+            </option>
+          ))}
         </select>
       </div>
 

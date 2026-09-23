@@ -81,7 +81,7 @@ export default async function ProductDetailPage({
           <Field label="SKU" value={product.sku} />
           <Field label="Category" value={product.category || ''} />
           <Field label="Condition" value={product.condition} />
-          <Field label="Business Model" value={product.business_model} />
+          <Field label="Fulfillment Model" value={product.business_model} />
           <Field label="Status" value={product.product_status} />
           <Field label="Platform" value={product.sales_platform} />
         </Section>
@@ -106,11 +106,13 @@ export default async function ProductDetailPage({
           <Field label="Refurbishment" value={formatMoney(product.refurbishment_eur)} />
           <Field label="Dropship Customer Shipping" value={formatMoney(product.dropship_customer_shipping_eur)} />
           <Field label="Dropship Handling Fee" value={formatMoney(product.dropship_handling_fee_eur)} />
+          <Field label="Fulfillment Fee" value={formatMoney(product.fulfillment_fee_eur)} />
+          <Field label="Storage Fee / month" value={formatMoney(product.storage_fee_eur_per_month)} />
         </Section>
 
         <Section title="Fees">
-          <Field label="eBay Fee %" value={pct(product.ebay_fee_percent)} />
-          <Field label="Estimated eBay Fee" value={formatMoney(product.estimated_ebay_fee_eur)} />
+          <Field label="Selling Fee %" value={pct(product.ebay_fee_percent)} />
+          <Field label="Estimated Selling Fee" value={formatMoney(product.estimated_ebay_fee_eur)} />
           <Field label="Payment Fee %" value={pct(product.payment_fee_percent)} />
           <Field label="Fixed Payment Fee" value={formatMoney(product.fixed_payment_fee_eur)} />
           <Field label="Estimated Payment Fee" value={formatMoney(product.estimated_payment_fee_eur)} />

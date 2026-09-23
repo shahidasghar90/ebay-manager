@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
+import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfig';
 import { calculateOrderPricing } from '@/lib/orderPricing';
 import { formatMoney } from '@/lib/format';
-import type { Order, Product, Settings } from '@/lib/types';
+import type { Order, Product, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
 
 type FormState = {
   sku: string;
@@ -16,7 +17,7 @@ type FormState = {
   saleCurrency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   itemPriceLocal: string;
   shippingChargedLocal: string;
-  fulfillmentType: 'Self' | 'Dropship';
+  fulfillmentType: string;
   orderStatus: string;
   orderDate: string;
   supplierOrderId: string;
@@ -36,7 +37,7 @@ function initialState(order?: Order): FormState {
     saleCurrency: (order?.sale_currency as FormState['saleCurrency']) || 'EUR',
     itemPriceLocal: String(order?.item_price_local ?? ''),
     shippingChargedLocal: String(order?.shipping_charged_local ?? ''),
-    fulfillmentType: (order?.fulfillment_type as FormState['fulfillmentType']) || 'Self',
+    fulfillmentType: order?.fulfillment_type || 'Self',
     orderStatus: order?.order_status || 'New',
     orderDate: order?.order_date || new Date().toISOString().slice(0, 10),
     supplierOrderId: '',
@@ -69,9 +70,13 @@ export default function OrderForm({ products, order }: { products: Product[]; or
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [salesPlatforms, setSalesPlatforms] = useState<SalesPlatform[]>([]);
+  const [fulfillmentModels, setFulfillmentModels] = useState<FulfillmentModel[]>([]);
 
   useEffect(() => {
     fetchSettings(supabase).then(setSettings);
+    fetchSalesPlatforms(supabase).then(setSalesPlatforms);
+    fetchFulfillmentModels(supabase).then(setFulfillmentModels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -219,185 +224,216 @@ export default function OrderForm({ products, order }: { products: Product[]; or
         </div>
       </div>
 
-      <div className="card p-5">
-        <div className="grid sm:grid-cols-2 gap-3.5">
-          <label className="field-label">
-            SKU *
-            <select
-              className="field-input"
-              required
-              value={form.sku}
-              onChange={(e) => setField('sku', e.target.value)}
-              disabled={isEditing}
-            >
-              <option value="">Select a product</option>
-              {products.map((product) => (
-                <option key={product.sku} value={product.sku}>
-                  {product.sku} — {product.product_name}
-                </option>
-              ))}
-            </select>
-          </label>
+      <FormSection title="Order Details">
+        <label className="field-label">
+          SKU *
+          <select
+            className="field-input"
+            required
+            value={form.sku}
+            onChange={(e) => {
+              const sku = e.target.value;
+              const product = products.find((p) => p.sku === sku);
+              setForm((prev) => ({
+                ...prev,
+                sku,
+                fulfillmentType: product?.business_model || prev.fulfillmentType,
+                salesPlatform: product?.sales_platform || prev.salesPlatform
+              }));
+            }}
+            disabled={isEditing}
+          >
+            <option value="">Select a product</option>
+            {products.map((product) => (
+              <option key={product.sku} value={product.sku}>
+                {product.sku} — {product.product_name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="field-label">
-            Order Date *
-            <input
-              className="field-input"
-              type="date"
-              required
-              value={form.orderDate}
-              onChange={(e) => setField('orderDate', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Order Date *
+          <input
+            className="field-input"
+            type="date"
+            required
+            value={form.orderDate}
+            onChange={(e) => setField('orderDate', e.target.value)}
+          />
+        </label>
 
-          <label className="field-label">
-            Buyer Username
-            <input
-              className="field-input"
-              value={form.buyerUsername}
-              onChange={(e) => setField('buyerUsername', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Buyer Username
+          <input
+            className="field-input"
+            value={form.buyerUsername}
+            onChange={(e) => setField('buyerUsername', e.target.value)}
+          />
+        </label>
 
-          <label className="field-label">
-            Quantity *
-            <input
-              className="field-input"
-              type="number"
-              min="1"
-              step="1"
-              required
-              value={form.quantity}
-              onChange={(e) => setField('quantity', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Quantity *
+          <input
+            className="field-input"
+            type="number"
+            min="1"
+            step="1"
+            required
+            value={form.quantity}
+            onChange={(e) => setField('quantity', e.target.value)}
+          />
+        </label>
+      </FormSection>
 
-          <label className="field-label">
-            Sales Platform
-            <select
-              className="field-input"
-              value={form.salesPlatform}
-              onChange={(e) => setField('salesPlatform', e.target.value)}
-            >
-              <option value="eBay_DE">eBay Germany</option>
-              <option value="eBay_US">eBay USA</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
+      <FormSection title="Sale">
+        <label className="field-label">
+          Sales Platform
+          <select
+            className="field-input"
+            value={form.salesPlatform}
+            onChange={(e) => setField('salesPlatform', e.target.value)}
+          >
+            {salesPlatforms.length === 0 && <option value={form.salesPlatform}>{form.salesPlatform}</option>}
+            {salesPlatforms.map((platform) => (
+              <option key={platform.code} value={platform.code}>
+                {platform.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="field-label">
-            Sale Currency *
-            <select
-              className="field-input"
-              value={form.saleCurrency}
-              onChange={(e) => setField('saleCurrency', e.target.value as FormState['saleCurrency'])}
-            >
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="PKR">PKR</option>
-              <option value="CNY">CNY</option>
-            </select>
-          </label>
+        <label className="field-label">
+          Sale Currency *
+          <select
+            className="field-input"
+            value={form.saleCurrency}
+            onChange={(e) => setField('saleCurrency', e.target.value as FormState['saleCurrency'])}
+          >
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="PKR">PKR</option>
+            <option value="CNY">CNY</option>
+          </select>
+        </label>
 
-          <label className="field-label">
-            Item Price (sale currency) *
-            <input
-              className="field-input"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              value={form.itemPriceLocal}
-              onChange={(e) => setField('itemPriceLocal', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Item Price (sale currency) *
+          <input
+            className="field-input"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            value={form.itemPriceLocal}
+            onChange={(e) => setField('itemPriceLocal', e.target.value)}
+          />
+        </label>
 
-          <label className="field-label">
-            Shipping Charged (sale currency)
-            <input
-              className="field-input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.shippingChargedLocal}
-              onChange={(e) => setField('shippingChargedLocal', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Shipping Charged (sale currency)
+          <input
+            className="field-input"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.shippingChargedLocal}
+            onChange={(e) => setField('shippingChargedLocal', e.target.value)}
+          />
+        </label>
+      </FormSection>
 
-          <label className="field-label">
-            Fulfillment Type
-            <select
-              className="field-input"
-              value={form.fulfillmentType}
-              onChange={(e) => setField('fulfillmentType', e.target.value as FormState['fulfillmentType'])}
-            >
-              <option value="Self">Self</option>
-              <option value="Dropship">Dropship</option>
-            </select>
-          </label>
+      <FormSection title="Fulfillment & Status">
+        <label className="field-label">
+          Fulfillment Type
+          <select
+            className="field-input"
+            value={form.fulfillmentType}
+            onChange={(e) => setField('fulfillmentType', e.target.value)}
+          >
+            {fulfillmentModels.length === 0 && (
+              <option value={form.fulfillmentType}>{form.fulfillmentType}</option>
+            )}
+            {fulfillmentModels.map((model) => (
+              <option key={model.code} value={model.code}>
+                {model.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="field-label">
-            Order Status
-            <select
-              className="field-input"
-              value={form.orderStatus}
-              onChange={(e) => setField('orderStatus', e.target.value)}
-            >
-              <option value="New">New</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </label>
+        <label className="field-label">
+          Order Status
+          <select
+            className="field-input"
+            value={form.orderStatus}
+            onChange={(e) => setField('orderStatus', e.target.value)}
+          >
+            <option value="New">New</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </label>
 
-          <label className="field-label">
-            Carrier
-            <input
-              className="field-input"
-              value={form.carrier}
-              onChange={(e) => setField('carrier', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Carrier
+          <input
+            className="field-input"
+            value={form.carrier}
+            onChange={(e) => setField('carrier', e.target.value)}
+          />
+        </label>
 
-          <label className="field-label">
-            Buyer Tracking Number
-            <input
-              className="field-input"
-              value={form.buyerTrackingNumber}
-              onChange={(e) => setField('buyerTrackingNumber', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Buyer Tracking Number
+          <input
+            className="field-input"
+            value={form.buyerTrackingNumber}
+            onChange={(e) => setField('buyerTrackingNumber', e.target.value)}
+          />
+        </label>
 
-          <label className="field-label">
-            Delivered Date
-            <input
-              className="field-input"
-              type="date"
-              value={form.deliveredDate}
-              onChange={(e) => setField('deliveredDate', e.target.value)}
-            />
-          </label>
+        <label className="field-label">
+          Delivered Date
+          <input
+            className="field-input"
+            type="date"
+            value={form.deliveredDate}
+            onChange={(e) => setField('deliveredDate', e.target.value)}
+          />
+        </label>
+      </FormSection>
 
-          <label className="field-label sm:col-span-2">
-            Notes
-            <textarea
-              className="field-input"
-              rows={3}
-              value={form.notes}
-              onChange={(e) => setField('notes', e.target.value)}
-            />
-          </label>
-        </div>
+      <FormSection title="Notes">
+        <label className="field-label sm:col-span-2">
+          Notes
+          <textarea
+            className="field-input"
+            rows={3}
+            value={form.notes}
+            onChange={(e) => setField('notes', e.target.value)}
+          />
+        </label>
+      </FormSection>
 
-        {error && <p className="text-red font-semibold mt-4">{error}</p>}
+      {error && <p className="text-red font-semibold">{error}</p>}
 
-        <div className="flex justify-end gap-2.5 mt-5 pt-4 border-t border-border">
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : isEditing ? 'Update Order' : 'Save Order'}
-          </button>
-        </div>
+      <div className="flex justify-end gap-2.5">
+        <button type="submit" className="btn-primary" disabled={saving}>
+          {saving ? 'Saving...' : isEditing ? 'Update Order' : 'Save Order'}
+        </button>
       </div>
     </form>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card p-5">
+      <h3 className="font-bold text-base m-0 mb-3.5">{title}</h3>
+      <div className="grid sm:grid-cols-2 gap-3.5">{children}</div>
+    </div>
   );
 }
 
