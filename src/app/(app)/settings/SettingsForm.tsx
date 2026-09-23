@@ -31,6 +31,14 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     setError('');
     setSaved(false);
 
+    const { data: workspaceId, error: workspaceError } = await supabase.rpc('current_workspace_id');
+
+    if (workspaceError || !workspaceId) {
+      setSaving(false);
+      setError(workspaceError?.message || 'Could not determine your workspace.');
+      return;
+    }
+
     const rows = [
       { key: 'fx_usd', value: num(fxUsd) },
       { key: 'fx_pkr', value: num(fxPkr) },
@@ -39,7 +47,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       { key: 'fixed_payment_fee_eur', value: num(fixedPaymentFeeEur) },
       { key: 'vat_registered', value: vatRegistered ? 1 : 0 },
       { key: 'vat_rate_percent', value: num(vatRatePercent) }
-    ];
+    ].map((row) => ({ ...row, workspace_id: workspaceId }));
 
     const { error: saveError } = await supabase
       .from('settings')
@@ -116,11 +124,12 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       </div>
 
       <div className="border-t border-border pt-3.5 grid sm:grid-cols-2 gap-3.5">
-        <label className="field-label flex-row items-center gap-2 flex">
+        <label className="field-label flex-row items-center gap-2.5 flex cursor-pointer">
           <input
             type="checkbox"
             checked={vatRegistered}
             onChange={(e) => setVatRegistered(e.target.checked)}
+            className="w-[18px] h-[18px] accent-blue cursor-pointer"
           />
           VAT Registered (Regelbesteuerung)
         </label>
