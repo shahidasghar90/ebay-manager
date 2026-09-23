@@ -17,6 +17,7 @@ type FormState = {
   saleCurrency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   itemPriceLocal: string;
   shippingChargedLocal: string;
+  shippingPackagingCostEur: string;
   fulfillmentType: string;
   orderStatus: string;
   orderDate: string;
@@ -37,6 +38,7 @@ function initialState(order?: Order): FormState {
     saleCurrency: (order?.sale_currency as FormState['saleCurrency']) || 'EUR',
     itemPriceLocal: String(order?.item_price_local ?? ''),
     shippingChargedLocal: String(order?.shipping_charged_local ?? ''),
+    shippingPackagingCostEur: String(order?.shipping_packaging_cost_eur ?? ''),
     fulfillmentType: order?.fulfillment_type || 'Self',
     orderStatus: order?.order_status || 'New',
     orderDate: order?.order_date || new Date().toISOString().slice(0, 10),
@@ -99,9 +101,16 @@ export default function OrderForm({ products, order }: { products: Product[]; or
         paymentFeePercent: selectedProduct?.payment_fee_percent ?? settings.paymentFeePercent,
         fixedPaymentFeeEur: selectedProduct?.fixed_payment_fee_eur ?? settings.fixedPaymentFeeEur,
         productCostEur: selectedProduct?.total_cost_eur ?? 0,
-        shippingPackagingCostEur: 0
+        shippingPackagingCostEur: num(form.shippingPackagingCostEur)
       }),
-    [form.itemPriceLocal, form.shippingChargedLocal, form.saleCurrency, selectedProduct, settings]
+    [
+      form.itemPriceLocal,
+      form.shippingChargedLocal,
+      form.shippingPackagingCostEur,
+      form.saleCurrency,
+      selectedProduct,
+      settings
+    ]
   );
 
   async function handleSubmit(event: React.FormEvent) {
@@ -144,7 +153,7 @@ export default function OrderForm({ products, order }: { products: Product[]; or
       fixed_payment_fee_eur: selectedProduct.fixed_payment_fee_eur,
       payment_fee_eur: pricing.paymentFeeEur,
       product_cost_eur: selectedProduct.total_cost_eur,
-      shipping_packaging_cost_eur: 0,
+      shipping_packaging_cost_eur: num(form.shippingPackagingCostEur),
       total_order_cost_eur: pricing.totalOrderCostEur,
       net_profit_eur: pricing.netProfitEur,
       net_margin: pricing.netMargin,
@@ -331,7 +340,7 @@ export default function OrderForm({ products, order }: { products: Product[]; or
         </label>
 
         <label className="field-label">
-          Shipping Charged (sale currency)
+          Shipping Charged to Buyer (sale currency)
           <input
             className="field-input"
             type="number"
@@ -340,6 +349,24 @@ export default function OrderForm({ products, order }: { products: Product[]; or
             value={form.shippingChargedLocal}
             onChange={(e) => setField('shippingChargedLocal', e.target.value)}
           />
+          <small className="text-muted font-normal text-[11px] -mt-0.5">
+            What the buyer paid you for shipping (counts as revenue).
+          </small>
+        </label>
+
+        <label className="field-label">
+          Actual Shipping/Packaging Cost (EUR)
+          <input
+            className="field-input"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.shippingPackagingCostEur}
+            onChange={(e) => setField('shippingPackagingCostEur', e.target.value)}
+          />
+          <small className="text-muted font-normal text-[11px] -mt-0.5">
+            What it really cost you — shipping label, box, tape, etc.
+          </small>
         </label>
       </FormSection>
 

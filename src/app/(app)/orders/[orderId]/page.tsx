@@ -71,8 +71,10 @@ export default async function OrderDetailPage({
 
         <Section title="Financials">
           <Field label="Gross Sale" value={formatMoney(order.gross_sale_eur)} />
-          <Field label="eBay Fee" value={formatMoney(order.ebay_fee_eur)} />
+          <Field label="Selling Fee" value={formatMoney(order.ebay_fee_eur)} />
           <Field label="Payment Fee" value={formatMoney(order.payment_fee_eur)} />
+          <Field label="Product Cost" value={formatMoney(order.product_cost_eur)} />
+          <Field label="Shipping/Packaging Cost" value={formatMoney(order.shipping_packaging_cost_eur)} />
           <Field label="Total Cost" value={formatMoney(order.total_order_cost_eur)} />
           <Field label="Net Profit" value={formatMoney(order.net_profit_eur)} />
           <Field label="Net Margin" value={`${(Number(order.net_margin || 0) * 100).toFixed(1)}%`} />
