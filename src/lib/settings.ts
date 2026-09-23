@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import type { Settings } from './types';
 
 const DEFAULT_SETTINGS: Settings = {
-  fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
+  fxRates: { EUR: 1, USD: 1.08, PKR: 310, CNY: 7.8 },
   ebayFeePercent: 0.129,
   paymentFeePercent: 0.029,
   fixedPaymentFeeEur: 0.35,
@@ -17,7 +17,8 @@ export function mapSettingsRows(rows: { key: string; value: number }[]): Setting
     fxRates: {
       EUR: 1,
       USD: byKey.fx_usd ?? DEFAULT_SETTINGS.fxRates.USD,
-      PKR: byKey.fx_pkr ?? DEFAULT_SETTINGS.fxRates.PKR
+      PKR: byKey.fx_pkr ?? DEFAULT_SETTINGS.fxRates.PKR,
+      CNY: byKey.fx_cny ?? DEFAULT_SETTINGS.fxRates.CNY
     },
     ebayFeePercent: byKey.ebay_fee_percent ?? DEFAULT_SETTINGS.ebayFeePercent,
     paymentFeePercent: byKey.payment_fee_percent ?? DEFAULT_SETTINGS.paymentFeePercent,

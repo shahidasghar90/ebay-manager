@@ -37,7 +37,7 @@ type FormState = {
   supplierPlatform: string;
   supplierLink: string;
   mainEbayListingUrl: string;
-  currency: 'EUR' | 'USD' | 'PKR';
+  currency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   purchasePriceLocal: string;
   shippingLocal: string;
   customsEur: string;
@@ -101,7 +101,7 @@ function initialStateFromProduct(product?: Product, research?: ResearchItem): Fo
     supplierPlatform: product?.supplier_platform || '',
     supplierLink: product?.supplier_link || '',
     mainEbayListingUrl: product?.main_ebay_listing_url || '',
-    currency: (product?.source_currency as 'EUR' | 'USD' | 'PKR') || 'EUR',
+    currency: (product?.source_currency as 'EUR' | 'USD' | 'PKR' | 'CNY') || 'EUR',
     purchasePriceLocal: String(product?.purchase_price_local ?? ''),
     shippingLocal: String(product?.shipping_local ?? ''),
     customsEur: String(product?.customs_eur ?? ''),
@@ -138,7 +138,7 @@ export default function ProductForm({
 
   const [form, setForm] = useState<FormState>(() => initialStateFromProduct(product, research));
   const [settings, setSettings] = useState<Settings>({
-    fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
+    fxRates: { EUR: 1, USD: 1.08, PKR: 310, CNY: 7.8 },
     ebayFeePercent: 0.129,
     paymentFeePercent: 0.029,
     fixedPaymentFeeEur: 0.35,
@@ -536,6 +536,7 @@ export default function ProductForm({
               <option value="EUR">EUR</option>
               <option value="USD">USD</option>
               <option value="PKR">PKR</option>
+              <option value="CNY">CNY</option>
             </select>
           </label>
 

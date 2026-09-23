@@ -11,6 +11,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
 
   const [fxUsd, setFxUsd] = useState(String(settings.fxRates.USD));
   const [fxPkr, setFxPkr] = useState(String(settings.fxRates.PKR));
+  const [fxCny, setFxCny] = useState(String(settings.fxRates.CNY));
   const [ebayFeePercent, setEbayFeePercent] = useState(String(settings.ebayFeePercent));
   const [paymentFeePercent, setPaymentFeePercent] = useState(String(settings.paymentFeePercent));
   const [fixedPaymentFeeEur, setFixedPaymentFeeEur] = useState(String(settings.fixedPaymentFeeEur));
@@ -42,6 +43,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     const rows = [
       { key: 'fx_usd', value: num(fxUsd) },
       { key: 'fx_pkr', value: num(fxPkr) },
+      { key: 'fx_cny', value: num(fxCny) },
       { key: 'ebay_fee_percent', value: num(ebayFeePercent) },
       { key: 'payment_fee_percent', value: num(paymentFeePercent) },
       { key: 'fixed_payment_fee_eur', value: num(fixedPaymentFeeEur) },
@@ -86,6 +88,17 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
             step="0.0001"
             value={fxPkr}
             onChange={(e) => setFxPkr(e.target.value)}
+          />
+        </label>
+
+        <label className="field-label">
+          CNY to EUR Rate
+          <input
+            className="field-input"
+            type="number"
+            step="0.0001"
+            value={fxCny}
+            onChange={(e) => setFxCny(e.target.value)}
           />
         </label>
 

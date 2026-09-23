@@ -13,7 +13,7 @@ type FormState = {
   buyerUsername: string;
   quantity: string;
   salesPlatform: string;
-  saleCurrency: 'EUR' | 'USD' | 'PKR';
+  saleCurrency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   itemPriceLocal: string;
   shippingChargedLocal: string;
   fulfillmentType: 'Self' | 'Dropship';
@@ -60,7 +60,7 @@ export default function OrderForm({ products, order }: { products: Product[]; or
 
   const [form, setForm] = useState<FormState>(() => initialState(order));
   const [settings, setSettings] = useState<Settings>({
-    fxRates: { EUR: 1, USD: 1.08, PKR: 310 },
+    fxRates: { EUR: 1, USD: 1.08, PKR: 310, CNY: 7.8 },
     ebayFeePercent: 0.129,
     paymentFeePercent: 0.029,
     fixedPaymentFeeEur: 0.35,
@@ -295,6 +295,7 @@ export default function OrderForm({ products, order }: { products: Product[]; or
               <option value="EUR">EUR</option>
               <option value="USD">USD</option>
               <option value="PKR">PKR</option>
+              <option value="CNY">CNY</option>
             </select>
           </label>
 

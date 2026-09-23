@@ -133,7 +133,7 @@ export type ResearchItem = {
   supplier_platform: string | null;
   main_listing_url: string | null;
   image_url: string | null;
-  currency: 'EUR' | 'USD' | 'PKR';
+  currency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   product_price_local: number;
   shipping_local: number;
   moq: number | null;
@@ -146,7 +146,7 @@ export type ResearchItem = {
 };
 
 export type Settings = {
-  fxRates: { EUR: number; USD: number; PKR: number };
+  fxRates: { EUR: number; USD: number; PKR: number; CNY: number };
   ebayFeePercent: number;
   paymentFeePercent: number;
   fixedPaymentFeeEur: number;

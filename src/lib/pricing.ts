@@ -1,8 +1,8 @@
 // Ported from the old Apps Script Products.js buildProductRow_ formula.
 
 export type PricingInput = {
-  currency: 'EUR' | 'USD' | 'PKR';
-  fxRates: { EUR: number; USD: number; PKR: number };
+  currency: 'EUR' | 'USD' | 'PKR' | 'CNY';
+  fxRates: { EUR: number; USD: number; PKR: number; CNY: number };
   purchasePriceLocal: number;
   shippingLocal: number;
   customsEur: number;

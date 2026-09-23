@@ -9,7 +9,7 @@ describe('mapSettingsRows', () => {
       { key: 'vat_rate_percent', value: 7 }
     ]);
 
-    expect(result.fxRates).toEqual({ EUR: 1, USD: 1.1, PKR: 310 });
+    expect(result.fxRates).toEqual({ EUR: 1, USD: 1.1, PKR: 310, CNY: 7.8 });
     expect(result.vatRegistered).toBe(true);
     expect(result.vatRatePercent).toBe(7);
   });

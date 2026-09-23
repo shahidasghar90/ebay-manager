@@ -10,7 +10,7 @@ type FormState = {
   productTitle: string;
   category: string;
   potentialModel: 'Stock' | 'Dropship' | 'Used';
-  currency: 'EUR' | 'USD' | 'PKR';
+  currency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   productPriceLocal: string;
   shippingLocal: string;
   mainListingUrl: string;
@@ -224,6 +224,7 @@ export default function ResearchForm({
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="PKR">PKR</option>
+            <option value="CNY">CNY</option>
           </select>
         </label>
 
