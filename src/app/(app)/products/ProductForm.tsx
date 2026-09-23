@@ -106,8 +106,12 @@ function initialStateFromProduct(product?: Product, research?: ResearchItem): Fo
     supplierLink: product?.supplier_link || '',
     mainEbayListingUrl: product?.main_ebay_listing_url || '',
     currency: (product?.source_currency as 'EUR' | 'USD' | 'PKR' | 'CNY') || 'EUR',
-    purchasePriceLocal: String(product?.purchase_price_local ?? ''),
-    shippingLocal: String(product?.shipping_local ?? ''),
+    purchasePriceLocal: String(
+      product ? Number(product.purchase_price_local || 0) * (product.supplier_moq || 1) : ''
+    ),
+    shippingLocal: String(
+      product ? Number(product.shipping_local || 0) * (product.supplier_moq || 1) : ''
+    ),
     customsEur: String(product?.customs_eur ?? ''),
     packagingEur: String(product?.packaging_eur ?? ''),
     refurbishmentEur: String(product?.refurbishment_eur ?? ''),
@@ -193,13 +197,15 @@ export default function ProductForm({
     }));
   }
 
+  const unitsPerPurchase = num(form.supplierMoq) || 1;
+
   const pricing = useMemo(
     () =>
       calculatePricing({
         currency: form.currency,
         fxRates: settings.fxRates,
-        purchasePriceLocal: num(form.purchasePriceLocal),
-        shippingLocal: num(form.shippingLocal),
+        purchasePriceLocal: num(form.purchasePriceLocal) / unitsPerPurchase,
+        shippingLocal: num(form.shippingLocal) / unitsPerPurchase,
         customsEur: num(form.customsEur),
         packagingEur: num(form.packagingEur),
         refurbishmentEur: num(form.refurbishmentEur),
@@ -302,9 +308,9 @@ export default function ProductForm({
       image_file_ids: images.map((image) => image.path),
       source_currency: form.currency,
       fx_rate: pricing.fxRate,
-      purchase_price_local: num(form.purchasePriceLocal),
+      purchase_price_local: num(form.purchasePriceLocal) / unitsPerPurchase,
       purchase_price_eur: pricing.purchasePriceEur,
-      shipping_local: num(form.shippingLocal),
+      shipping_local: num(form.shippingLocal) / unitsPerPurchase,
       shipping_eur: pricing.shippingEur,
       customs_eur: num(form.customsEur),
       packaging_eur: num(form.packagingEur),
@@ -389,7 +395,7 @@ export default function ProductForm({
     <form onSubmit={handleSubmit} className="grid gap-6">
       <div className="card p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          <PreviewField label="Total Cost" value={formatMoney(pricing.totalCostEur)} />
+          <PreviewField label="Total Cost (per unit)" value={formatMoney(pricing.totalCostEur)} />
           <PreviewField label="Breakeven Price" value={formatMoney(pricing.minimumSalePriceEur)} />
           <PreviewField label="Recommended Price" value={formatMoney(pricing.recommendedSalePriceEur)} />
           <PreviewField
@@ -663,8 +669,30 @@ export default function ProductForm({
           </select>
         </label>
 
-        <NumberField label="Purchase Price (local currency)" value={form.purchasePriceLocal} onChange={(v) => setField('purchasePriceLocal', v)} />
-        <NumberField label="Shipping to You (local currency)" value={form.shippingLocal} onChange={(v) => setField('shippingLocal', v)} />
+        <NumberField
+          label="Purchase Price (local currency)"
+          value={form.purchasePriceLocal}
+          onChange={(v) => setField('purchasePriceLocal', v)}
+          hint={
+            unitsPerPurchase > 1
+              ? `Total for ${unitsPerPurchase} units (Supplier MOQ below) — ≈ ${(
+                  num(form.purchasePriceLocal) / unitsPerPurchase
+                ).toFixed(2)} ${form.currency} per unit.`
+              : 'Price for one unit.'
+          }
+        />
+        <NumberField
+          label="Shipping to You (local currency)"
+          value={form.shippingLocal}
+          onChange={(v) => setField('shippingLocal', v)}
+          hint={
+            unitsPerPurchase > 1
+              ? `Total shipping for ${unitsPerPurchase} units — ≈ ${(
+                  num(form.shippingLocal) / unitsPerPurchase
+                ).toFixed(2)} ${form.currency} per unit.`
+              : undefined
+          }
+        />
         <NumberField
           label="Customs / Duty (EUR)"
           value={form.customsEur}
