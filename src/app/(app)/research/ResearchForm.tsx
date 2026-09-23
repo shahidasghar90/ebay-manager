@@ -60,7 +60,13 @@ function normalizeUrl(value: string) {
   return `https://${trimmed}`;
 }
 
-export default function ResearchForm({ research }: { research?: ResearchItem }) {
+export default function ResearchForm({
+  research,
+  onSaved
+}: {
+  research?: ResearchItem;
+  onSaved?: () => void;
+}) {
   const isEditing = !!research;
   const router = useRouter();
   const supabase = createClient();
@@ -163,6 +169,7 @@ export default function ResearchForm({ research }: { research?: ResearchItem }) 
 
     setForm(initial);
     router.refresh();
+    onSaved?.();
   }
 
   return (
@@ -335,10 +342,16 @@ export default function ResearchForm({ research }: { research?: ResearchItem }) 
       {error && <p className="text-red font-semibold">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        {isEditing && (
+        {isEditing ? (
           <button type="button" className="btn-secondary" onClick={() => router.push('/research')}>
             Cancel
           </button>
+        ) : (
+          onSaved && (
+            <button type="button" className="btn-secondary" onClick={onSaved}>
+              Cancel
+            </button>
+          )
         )}
         <button type="submit" className="btn-primary" disabled={saving || uploading}>
           {saving

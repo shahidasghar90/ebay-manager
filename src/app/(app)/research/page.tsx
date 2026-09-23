@@ -1,7 +1,7 @@
 import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { ResearchItem } from '@/lib/types';
-import ResearchForm from './ResearchForm';
+import AddResearchButton from './AddResearchButton';
 import ResearchTable from './ResearchTable';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ export default async function ResearchPage() {
       />
 
       <div className="grid gap-6">
-        <ResearchForm />
+        <AddResearchButton />
         <ResearchTable items={(data as ResearchItem[]) || []} />
       </div>
     </div>
