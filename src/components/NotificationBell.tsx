@@ -88,12 +88,12 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative rounded-lg border border-white/20 w-10 h-10 grid place-items-center text-lg leading-none text-white"
+        className="relative rounded-lg border border-white/20 w-10 h-10 grid place-items-center text-lg leading-none text-white md:border-border md:text-text md:hover:bg-slate-50"
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
       >
         🔔
         {unread > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red text-white text-[11px] font-bold grid place-items-center border-2 border-navy">
+          <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red text-white text-[11px] font-bold grid place-items-center border-2 border-navy md:border-white">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -107,7 +107,7 @@ export default function NotificationBell() {
           <div
             role="dialog"
             aria-label="Notifications"
-            className="fixed z-[410] left-2 right-2 top-[calc(env(safe-area-inset-top)+68px)] md:left-[262px] md:right-auto md:top-4 md:w-[380px] max-h-[75dvh] flex flex-col rounded-xl bg-white text-text shadow-2xl border border-border overflow-hidden"
+            className="fixed z-[410] left-2 right-2 top-[calc(env(safe-area-inset-top)+68px)] md:left-auto md:right-7 md:top-[72px] md:w-[380px] max-h-[75dvh] flex flex-col rounded-xl bg-white text-text shadow-2xl border border-border overflow-hidden"
           >
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
               <strong className="text-base">Notifications</strong>

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import NotificationBell from './NotificationBell';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: '▦' },
@@ -55,20 +54,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         className={`
           fixed md:sticky top-0 left-0 bottom-0 z-[300] w-[250px] max-w-[85vw] shrink-0
           h-[100dvh] md:h-screen overflow-y-auto
-          bg-navy text-white flex flex-col p-6 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-6
+          bg-navy text-white flex flex-col p-5 pt-[calc(env(safe-area-inset-top)+20px)] md:pt-3
           transition-transform duration-200 ease-out shadow-2xl md:shadow-none
           ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        <div className="flex items-center gap-3 pb-7 border-b border-white/10 relative">
+        <div className="flex items-center gap-3 pb-4 md:pb-3 md:h-10 md:box-content border-b border-white/10 relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-round.png" alt="TradePilot logo" className="w-10 h-10 shrink-0 rounded-full bg-white object-cover" />
           <div>
             <h1 className="text-base font-bold m-0">TradePilot</h1>
             <p className="text-xs text-slate-400 m-0">Business Console</p>
-          </div>
-          <div className="hidden md:block ml-auto">
-            <NotificationBell />
           </div>
           <button
             className="md:hidden absolute right-0 top-0 text-white text-lg p-1"
@@ -79,7 +75,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="mt-6 grid gap-1.5">
+        <nav className="mt-4 grid gap-0.5">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
@@ -88,7 +84,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  rounded-lg px-3 py-2.5 font-semibold text-sm
+                  rounded-lg px-3 py-2 font-semibold text-sm
                   ${active ? 'bg-blue/20 text-white' : 'text-slate-300 hover:bg-blue/10 hover:text-white'}
                 `}
               >
@@ -98,12 +94,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="mt-auto pt-4 grid gap-3">
+        <div className="mt-auto pt-4 border-t border-white/10 grid gap-2">
           {email && (
-            <div className="text-xs text-slate-400 leading-relaxed">
-              <p className="m-0">Logged in as</p>
-              <p className="m-0 text-slate-200 break-all">{email}</p>
-            </div>
+            <p className="m-0 text-xs text-slate-400 flex items-center gap-1.5 min-w-0" title={`Logged in as ${email}`}>
+              <span className="w-2 h-2 shrink-0 rounded-full bg-[#22c55e] inline-block" aria-hidden />
+              <span className="truncate text-slate-200">{email}</span>
+            </p>
           )}
           <button
             onClick={handleLogout}
@@ -111,10 +107,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           >
             ⏻ Log out
           </button>
-          <div className="text-xs text-slate-400 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#22c55e] inline-block" />
-            Supabase backend connected
-          </div>
         </div>
       </aside>
     </>
