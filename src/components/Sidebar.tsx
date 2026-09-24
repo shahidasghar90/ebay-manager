@@ -61,9 +61,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         `}
       >
         <div className="flex items-center gap-3 pb-7 border-b border-white/10 relative">
-          <div className="w-9 h-9 rounded-lg bg-blue grid place-items-center font-bold text-xl">
-            T
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-round.png" alt="TradePilot logo" className="w-10 h-10 shrink-0 rounded-full bg-white object-cover" />
           <div>
             <h1 className="text-base font-bold m-0">TradePilot</h1>
             <p className="text-xs text-slate-400 m-0">Business Console</p>

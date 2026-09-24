@@ -40,9 +40,8 @@ export default function UpdatePasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-page px-4">
       <div className="card w-full max-w-sm p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-lg bg-blue text-white grid place-items-center font-bold text-xl">
-            T
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-round.png" alt="TradePilot logo" className="w-12 h-12 shrink-0 rounded-full object-cover" />
           <div>
             <h1 className="font-bold text-base">TradePilot</h1>
             <p className="text-xs text-muted">Set new password</p>

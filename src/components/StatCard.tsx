@@ -9,18 +9,22 @@ export default function StatCard({
   label,
   value,
   hint,
-  tone = 'default'
+  tone = 'default',
+  className = ''
 }: {
   label: string;
   value: string | number;
   hint?: string;
   tone?: 'default' | 'success' | 'warning' | 'danger';
+  className?: string;
 }) {
   return (
-    <article className="card p-4.5 p-[18px]">
-      <span className="text-muted text-[13px] font-bold">{label}</span>
-      <strong className={`block my-2 text-[28px] ${TONE_CLASSES[tone]}`}>{value}</strong>
-      {hint && <small className="text-muted">{hint}</small>}
+    <article className={`card p-3 sm:p-[18px] min-w-0 ${className}`}>
+      <span className="block text-muted text-xs sm:text-[13px] font-bold leading-tight">{label}</span>
+      <strong className={`block my-1 sm:my-2 text-lg sm:text-[28px] leading-tight break-words ${TONE_CLASSES[tone]}`}>
+        {value}
+      </strong>
+      {hint && <small className="block text-muted text-[11px] sm:text-xs leading-tight">{hint}</small>}
     </article>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -98,7 +99,9 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
+      {/* Portal: the desktop sidebar is transformed, which would trap a fixed panel inside it. */}
+      {open &&
+        createPortal(
         <>
           <div className="fixed inset-0 z-[400]" onClick={() => setOpen(false)} aria-hidden />
           <div
@@ -149,8 +152,9 @@ export default function NotificationBell() {
               </ul>
             )}
           </div>
-        </>
-      )}
+        </>,
+          document.body
+        )}
     </>
   );
 }

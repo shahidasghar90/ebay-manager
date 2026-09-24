@@ -104,7 +104,8 @@ export default async function DashboardPage() {
     <div>
       <PageHeader title="Dashboard" subtitle="Your eBay business overview" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Phones: two small cards per row; the two cash cards take a full row. */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
         <StatCard label="Total Products" value={totalProducts ?? 0} hint="All product records" />
         <StatCard label="Active Products" value={activeProducts ?? 0} hint="Ready for sale" />
         <StatCard
@@ -124,20 +125,22 @@ export default async function DashboardPage() {
           tone="success"
         />
         <StatCard
+          label="Inventory Value"
+          value={formatMoney(inventoryValue)}
+          hint="Stock on hand at cost"
+        />
+        <StatCard
           label="Cash Balance"
           value={formatMoney(cashBalance)}
           hint="All-time in minus out"
           tone={cashBalance < 0 ? 'danger' : 'default'}
+          className="col-span-2 sm:col-span-1"
         />
         <StatCard
           label="Cash In / Out This Month"
           value={`${formatMoney(cashInThisMonth)} / ${formatMoney(cashOutThisMonth)}`}
           hint="Accounts ledger"
-        />
-        <StatCard
-          label="Inventory Value"
-          value={formatMoney(inventoryValue)}
-          hint="Stock on hand at cost"
+          className="col-span-2 sm:col-span-1"
         />
         <StatCard
           label="Active Research Ideas"
@@ -164,12 +167,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 mt-4">
-        <div className="card p-[18px]">
-          <div className="flex justify-between items-start gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-2.5 sm:gap-4 mt-2.5 sm:mt-4">
+        <div className="card p-3.5 sm:p-[18px]">
+          <div className="flex justify-between items-start gap-4 mb-2 sm:mb-4">
             <div>
-              <h3 className="font-bold text-lg m-0">Recent Orders</h3>
-              <p className="text-muted text-[13px] mt-1 m-0">Latest eBay sales records</p>
+              <h3 className="font-bold text-base sm:text-lg m-0">Recent Orders</h3>
+              <p className="hidden sm:block text-muted text-[13px] mt-1 m-0">Latest eBay sales records</p>
             </div>
             <Link href="/orders" className="text-blue font-semibold text-sm">
               View all
@@ -179,40 +182,69 @@ export default async function DashboardPage() {
           {!recentOrders || recentOrders.length === 0 ? (
             <div className="text-muted text-center py-4">No orders yet.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="responsive-table w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
-                    <th className="p-3">Order ID</th>
-                    <th className="p-3">SKU</th>
-                    <th className="p-3">Sale</th>
-                    <th className="p-3">Profit</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(recentOrders as Order[]).map((order) => (
-                    <tr key={order.order_id} className="border-b border-border">
-                      <td className="p-3 font-semibold" data-label="Order ID">{order.order_id}</td>
-                      <td className="p-3" data-label="SKU">{order.sku}</td>
-                      <td className="p-3" data-label="Sale">{formatMoney(order.gross_sale_eur)}</td>
-                      <td className="p-3" data-label="Profit">{formatMoney(order.net_profit_eur)}</td>
-                      <td className="p-3" data-label="Status">
-                        <span className={statusClassName(order.order_status)}>
-                          {order.order_status}
+            <>
+              {/* Phones: one compact line per order. */}
+              <ul className="md:hidden grid m-0 p-0 list-none divide-y divide-border">
+                {(recentOrders as Order[]).map((order) => (
+                  <li key={order.order_id}>
+                    <Link href={`/orders/${order.order_id}`} className="flex items-center gap-3 py-2.5">
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold text-sm truncate">{order.order_id}</span>
+                        <span className="block text-muted text-xs truncate">{order.sku}</span>
+                      </span>
+                      <span className="text-right shrink-0">
+                        <span className="block font-bold text-sm">{formatMoney(order.gross_sale_eur)}</span>
+                        <span
+                          className={`block text-xs ${Number(order.net_profit_eur) < 0 ? 'text-red' : 'text-green'}`}
+                        >
+                          {formatMoney(order.net_profit_eur)}
                         </span>
-                      </td>
+                      </span>
+                      <span className={`${statusClassName(order.order_status)} shrink-0`}>{order.order_status}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="data-table w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
+                      <th className="p-3">Order ID</th>
+                      <th className="p-3">SKU</th>
+                      <th className="p-3">Sale</th>
+                      <th className="p-3">Profit</th>
+                      <th className="p-3">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {(recentOrders as Order[]).map((order) => (
+                      <tr key={order.order_id} className="border-b border-border">
+                        <td className="p-3 font-semibold">
+                          <Link href={`/orders/${order.order_id}`} className="hover:text-blue">
+                            {order.order_id}
+                          </Link>
+                        </td>
+                        <td className="p-3">{order.sku}</td>
+                        <td className="p-3">{formatMoney(order.gross_sale_eur)}</td>
+                        <td className="p-3">{formatMoney(order.net_profit_eur)}</td>
+                        <td className="p-3">
+                          <span className={statusClassName(order.order_status)}>
+                            {order.order_status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="grid gap-4">
-          <div className="card p-[18px]">
-            <h3 className="font-bold text-lg m-0 mb-4">Orders by Status</h3>
+        <div className="grid gap-2.5 sm:gap-4">
+          <div className="card p-3.5 sm:p-[18px]">
+            <h3 className="font-bold text-base sm:text-lg m-0 mb-3 sm:mb-4">Orders by Status</h3>
             {orderedStatuses.length === 0 ? (
               <div className="text-muted text-center py-2">No orders yet.</div>
             ) : (
@@ -227,19 +259,19 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          <div className="card p-[18px]">
-            <h3 className="font-bold text-lg m-0 mb-4">Quick Actions</h3>
-            <div className="grid gap-2.5">
-              <Link href="/products/new" className="btn-secondary text-left justify-start">
+          <div className="card p-3.5 sm:p-[18px]">
+            <h3 className="font-bold text-base sm:text-lg m-0 mb-3 sm:mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5">
+              <Link href="/products/new" className="btn-secondary text-left justify-start text-sm">
                 + Add New Product
               </Link>
-              <Link href="/research" className="btn-secondary text-left justify-start">
+              <Link href="/research" className="btn-secondary text-left justify-start text-sm">
                 ⌕ Research Product
               </Link>
-              <Link href="/orders" className="btn-secondary text-left justify-start">
+              <Link href="/orders" className="btn-secondary text-left justify-start text-sm">
                 ▤ Add Order
               </Link>
-              <Link href="/inventory" className="btn-secondary text-left justify-start">
+              <Link href="/inventory" className="btn-secondary text-left justify-start text-sm">
                 ▣ Check Inventory
               </Link>
             </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tradepilot-shell-v4';
+const CACHE_NAME = 'tradepilot-shell-v5';
 const SHELL_ASSETS = ['/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
