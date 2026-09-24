@@ -7,6 +7,7 @@ import { storageSafe } from '@/lib/storagePath';
 import { createClient } from '@/lib/supabase/client';
 import type { ResearchItem } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
+import { formatMoney } from '@/lib/format';
 
 type FormState = {
   keyword: string;
@@ -19,7 +20,8 @@ type FormState = {
   moq: string;
   mainListingUrl: string;
   imageUrl: string;
-  competitorPrices: { platform: string; price: string }[];
+  /** `locked` rows are saved entries shown read-only until the pencil is tapped. */
+  competitorPrices: { platform: string; price: string; locked?: boolean }[];
   notes: string;
 };
 
@@ -53,10 +55,15 @@ function stateFromResearch(research?: ResearchItem): FormState {
     imageUrl: research.image_url || '',
     competitorPrices: (research.competitor_prices || []).map((row) => ({
       platform: row.platform,
-      price: String(row.price)
+      price: String(row.price),
+      locked: true
     })),
     notes: research.notes || ''
   };
+}
+
+function isLink(value: string) {
+  return /^(https?:\/\/|www\.)/i.test(value.trim()) || /^[^\s]+\.[a-z]{2,}\/\S*/i.test(value.trim());
 }
 
 function normalizeUrl(value: string) {
@@ -90,6 +97,13 @@ export default function ResearchForm({
     setForm((prev) => ({
       ...prev,
       competitorPrices: [...prev.competitorPrices, { platform: '', price: '' }]
+    }));
+  }
+
+  function setCompetitorLocked(index: number, locked: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      competitorPrices: prev.competitorPrices.map((row, i) => (i === index ? { ...row, locked } : row))
     }));
   }
 
@@ -340,7 +354,45 @@ export default function ResearchForm({
         <div className="field-label sm:col-span-2">
           Competitor Prices (other platforms)
           <div className="grid gap-2 mt-1">
-            {form.competitorPrices.map((row, index) => (
+            {form.competitorPrices.map((row, index) =>
+              row.locked ? (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 rounded-md border border-border bg-slate-50 px-2.5 py-2 font-normal"
+                >
+                  {isLink(row.platform) ? (
+                    <a
+                      href={normalizeUrl(row.platform) || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 flex-1 truncate text-blue hover:underline"
+                      title={row.platform}
+                    >
+                      {row.platform.replace(/^https?:\/\/(www\.)?/i, '')}
+                    </a>
+                  ) : (
+                    <span className="min-w-0 flex-1 truncate">{row.platform}</span>
+                  )}
+                  <strong className="shrink-0">{formatMoney(Number(row.price) || 0)}</strong>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded px-2 py-1 text-slate-500 hover:text-blue hover:bg-white"
+                    onClick={() => setCompetitorLocked(index, false)}
+                    aria-label="Edit competitor price"
+                    title="Edit"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    className="shrink-0 text-red font-bold px-2"
+                    onClick={() => removeCompetitorPrice(index)}
+                    aria-label="Remove competitor price"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
               <div key={index} className="flex gap-2">
                 <input
                   className="field-input"
@@ -357,6 +409,17 @@ export default function ResearchForm({
                   value={row.price}
                   onChange={(e) => updateCompetitorPrice(index, 'price', e.target.value)}
                 />
+                {row.platform && Number(row.price) > 0 && (
+                  <button
+                    type="button"
+                    className="text-green font-bold px-2"
+                    onClick={() => setCompetitorLocked(index, true)}
+                    aria-label="Done editing"
+                    title="Done"
+                  >
+                    ✓
+                  </button>
+                )}
                 <button
                   type="button"
                   className="text-red font-bold px-2"
@@ -365,7 +428,8 @@ export default function ResearchForm({
                   ✕
                 </button>
               </div>
-            ))}
+              )
+            )}
             <button type="button" className="btn-secondary w-fit" onClick={addCompetitorPrice}>
               + Add Competitor Price
             </button>
