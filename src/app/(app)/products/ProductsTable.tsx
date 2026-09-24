@@ -129,14 +129,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3 sm:flex sm:flex-wrap sm:gap-2.5 sm:mb-4">
-        <select className="field-input sm:w-auto sm:min-w-[150px]" value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+        <select className="field-input sm:!w-auto sm:min-w-[150px]" value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
           <option value="">All Conditions</option>
           <option value="New">New</option>
           <option value="Used">Used</option>
           <option value="Refurbished">Refurbished</option>
         </select>
 
-        <select className="field-input sm:w-auto sm:min-w-[150px]" value={modelFilter} onChange={(e) => setModelFilter(e.target.value)}>
+        <select className="field-input sm:!w-auto sm:min-w-[150px]" value={modelFilter} onChange={(e) => setModelFilter(e.target.value)}>
           <option value="">All Models</option>
           {fulfillmentModels.map((model) => (
             <option key={model.code} value={model.code}>

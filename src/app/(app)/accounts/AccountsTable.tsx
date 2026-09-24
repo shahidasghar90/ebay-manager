@@ -75,7 +75,7 @@ export default function AccountsTable({
 
       <div className="flex flex-wrap gap-2.5 mb-4">
         <select
-          className="field-input w-auto min-w-[150px]"
+          className="field-input !w-auto min-w-[150px]"
           value={directionFilter}
           onChange={(e) => setDirectionFilter(e.target.value)}
         >
@@ -85,7 +85,7 @@ export default function AccountsTable({
         </select>
 
         <select
-          className="field-input w-auto min-w-[150px]"
+          className="field-input !w-auto min-w-[150px]"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >

@@ -340,7 +340,7 @@ export default function OrderForm({
 
         <label className="field-label">
           Item Price (sale currency) *
-          <div className="flex gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-2">
             <input
               className="field-input"
               type="number"
@@ -351,7 +351,7 @@ export default function OrderForm({
               onChange={(e) => setField('itemPriceLocal', e.target.value)}
             />
             <select
-              className="field-input w-auto shrink-0"
+              className="field-input"
               value={form.priceBasis}
               onChange={(e) => setField('priceBasis', e.target.value as FormState['priceBasis'])}
               aria-label="Price basis"
