@@ -64,6 +64,20 @@ body {
  * wrapping with .cell-wrap (and line-clamp on its content), so rows fit
  * without a horizontal scrollbar.
  */
+.table-scroll {
+  overflow-x: auto;
+}
+
+/*
+ * Wide screens always fit the table; at browser zoom the width can still round
+ * up by a pixel, which would show a pointless scrollbar.
+ */
+@media (min-width: 1280px) {
+  .table-scroll {
+    overflow-x: hidden;
+  }
+}
+
 @media (min-width: 768px) {
   .data-table th,
   .data-table td {

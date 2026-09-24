@@ -219,7 +219,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
 
           {/* Tablet and desktop: full table. */}
           <div className="hidden md:block card overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="table-scroll">
               <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">

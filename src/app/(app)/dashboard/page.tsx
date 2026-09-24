@@ -206,7 +206,7 @@ export default async function DashboardPage() {
                 ))}
               </ul>
 
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden md:block table-scroll">
                 <table className="data-table w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">

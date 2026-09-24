@@ -89,7 +89,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       </ul>
 
       <div className="hidden md:block card overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-scroll">
           <table className="responsive-table data-table w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
