@@ -19,15 +19,15 @@ export default function LoginPage() {
 
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    setLoading(false);
-
     if (signInError) {
       setError(signInError.message);
+      setLoading(false);
       return;
     }
 
-    router.push('/dashboard');
-    router.refresh();
+    // Keep "Signing in..." visible until the dashboard replaces this page. A single
+    // navigation is enough: refresh() here would render the dashboard a second time.
+    router.replace('/dashboard');
   }
 
   return (

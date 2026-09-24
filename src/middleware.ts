@@ -44,6 +44,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|favicon-32.png|apple-touch-icon.png|icon-192.png|icon-512.png|manifest.webmanifest|sw.js).*)'
+    // Skip Next internals and every static file in /public (images, icons, manifest, sw.js):
+    // they need no auth, and checking them would redirect e.g. the logo to /login.
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:png|jpe?g|gif|svg|webp|ico)$).*)'
   ]
 };
