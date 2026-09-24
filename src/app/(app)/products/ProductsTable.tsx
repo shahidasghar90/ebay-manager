@@ -146,97 +146,178 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         </select>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="responsive-table w-full text-sm md:min-w-[720px]">
-            <thead>
-              <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
-                <th className="p-3">Image</th>
-                <th className="p-3">SKU</th>
-                <th className="p-3">Product</th>
-                <th className="p-3">Condition</th>
-                <th className="p-3">Model</th>
-                <th className="p-3">Cost EUR</th>
-                <th className="p-3">Sale Price</th>
-                <th className="p-3">Profit</th>
-                <th className="p-3">Last Edited</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="cell-empty text-center text-muted p-5">
-                    {statusTab === 'All' ? 'No products found.' : `No ${statusTab.toLowerCase()} products.`}
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((product) => (
-                  <tr key={product.sku} className="border-b border-border">
-                    <td className="p-3 cell-image">
-                      {product.image_urls?.[0] && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={product.image_urls[0]}
-                          alt=""
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      )}
-                    </td>
-                    <td className="p-3" data-label="SKU">{product.sku}</td>
-                    <td className="p-3 font-semibold" data-label="Product">{product.product_name}</td>
-                    <td className="p-3" data-label="Condition">{product.condition}</td>
-                    <td className="p-3" data-label="Model">{product.business_model}</td>
-                    <td className="p-3" data-label="Cost EUR">{formatMoney(product.total_cost_eur)}</td>
-                    <td className="p-3" data-label="Sale Price">{formatMoney(product.current_sale_price_eur)}</td>
-                    <td className="p-3" data-label="Profit">{formatMoney(product.estimated_net_profit_eur)}</td>
-                    <td className="p-3" data-label="Last Edited">
-                      <RecordAuthorCell record={product} />
-                    </td>
-                    <td className="p-3" data-label="Status">
-                      <span className={statusClassName(product.product_status)}>
+      {filtered.length === 0 ? (
+        <div className="card p-6 text-center text-muted">
+          {statusTab === 'All' ? 'No products found.' : `No ${statusTab.toLowerCase()} products.`}
+        </div>
+      ) : (
+        <>
+          {/* Phones: one compact card per product. */}
+          <ul className="md:hidden grid gap-2.5">
+            {filtered.map((product) => {
+              const profit = Number(product.estimated_net_profit_eur || 0);
+              const editor = product.updated_by || product.created_by;
+
+              return (
+                <li key={product.sku} className="card p-3 flex gap-3">
+                  <Link href={`/products/${product.sku}`} className="shrink-0">
+                    {product.image_urls?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.image_urls[0]}
+                        alt=""
+                        className="w-16 h-16 object-cover rounded-lg border border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-slate-100 grid place-items-center text-slate-400 text-[10px]">
+                        No image
+                      </div>
+                    )}
+                  </Link>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        href={`/products/${product.sku}`}
+                        className="font-bold text-sm leading-snug line-clamp-2 break-words"
+                      >
+                        {product.product_name}
+                      </Link>
+                      <span className={`${statusClassName(product.product_status)} shrink-0`}>
                         {product.product_status}
                       </span>
-                    </td>
-                    <td className="p-3 cell-actions">
-                      <div className="flex gap-1.5">
-                        <Link
-                          href={`/products/${product.sku}`}
-                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          href={`/products/${product.sku}/edit`}
-                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                        >
-                          Edit
-                        </Link>
-                        {product.product_status === 'Archived' ? (
-                          <button
-                            className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-green hover:text-green"
-                            onClick={() => setProductStatus(product.sku, 'Active')}
-                          >
-                            Restore
-                          </button>
-                        ) : (
-                          <button
-                            className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-red hover:text-red"
-                            onClick={() => setProductStatus(product.sku, 'Archived')}
-                          >
-                            Archive
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    </div>
+
+                    <p className="text-muted text-xs m-0 mt-0.5 truncate">
+                      {product.sku} · {product.condition} · {product.business_model}
+                    </p>
+
+                    <p className="text-[13px] m-0 mt-1.5 flex flex-wrap gap-x-3">
+                      <span>
+                        Sale <strong>{formatMoney(product.current_sale_price_eur)}</strong>
+                      </span>
+                      <span>
+                        Profit{' '}
+                        <strong className={profit < 0 ? 'text-red' : 'text-green'}>
+                          {formatMoney(profit)}
+                        </strong>
+                      </span>
+                      <span className="text-muted">Cost {formatMoney(product.total_cost_eur)}</span>
+                    </p>
+
+                    <div className="flex items-center justify-between gap-2 mt-2">
+                      <span className="text-muted text-[11px] truncate">
+                        {editor ? `by ${editor.split('@')[0]}` : ''}
+                      </span>
+                      <ProductActions product={product} onSetStatus={setProductStatus} compact />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Tablet and desktop: full table. */}
+          <div className="hidden md:block card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
+                    <th className="p-3">Image</th>
+                    <th className="p-3">SKU</th>
+                    <th className="p-3">Product</th>
+                    <th className="p-3">Condition</th>
+                    <th className="p-3">Model</th>
+                    <th className="p-3">Cost EUR</th>
+                    <th className="p-3">Sale Price</th>
+                    <th className="p-3">Profit</th>
+                    <th className="p-3">Last Edited</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody>
+                  {filtered.map((product) => (
+                    <tr key={product.sku} className="border-b border-border">
+                      <td className="p-3">
+                        {product.image_urls?.[0] && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={product.image_urls[0]}
+                            alt=""
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                      </td>
+                      <td className="p-3">{product.sku}</td>
+                      <td className="p-3 font-semibold">{product.product_name}</td>
+                      <td className="p-3">{product.condition}</td>
+                      <td className="p-3">{product.business_model}</td>
+                      <td className="p-3">{formatMoney(product.total_cost_eur)}</td>
+                      <td className="p-3">{formatMoney(product.current_sale_price_eur)}</td>
+                      <td className="p-3">{formatMoney(product.estimated_net_profit_eur)}</td>
+                      <td className="p-3">
+                        <RecordAuthorCell record={product} />
+                      </td>
+                      <td className="p-3">
+                        <span className={statusClassName(product.product_status)}>
+                          {product.product_status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <ProductActions product={product} onSetStatus={setProductStatus} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductActions({
+  product,
+  onSetStatus,
+  compact = false
+}: {
+  product: Product;
+  onSetStatus: (sku: string, status: 'Archived' | 'Active') => void;
+  /** Cards already link the name to the detail page, so they skip "View". */
+  compact?: boolean;
+}) {
+  const button = 'text-xs font-bold border border-border rounded px-2.5 py-1.5';
+
+  return (
+    <div className="flex gap-1.5 shrink-0">
+      {!compact && (
+        <Link href={`/products/${product.sku}`} className={`${button} hover:border-blue hover:text-blue`}>
+          View
+        </Link>
+      )}
+      <Link href={`/products/${product.sku}/edit`} className={`${button} hover:border-blue hover:text-blue`}>
+        Edit
+      </Link>
+      {product.product_status === 'Archived' ? (
+        <button
+          type="button"
+          className={`${button} hover:border-green hover:text-green`}
+          onClick={() => onSetStatus(product.sku, 'Active')}
+        >
+          Restore
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`${button} hover:border-red hover:text-red`}
+          onClick={() => onSetStatus(product.sku, 'Archived')}
+        >
+          Archive
+        </button>
+      )}
     </div>
   );
 }
