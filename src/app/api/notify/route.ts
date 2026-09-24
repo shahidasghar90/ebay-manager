@@ -54,6 +54,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ sent: 0 });
   }
 
+  // Inbox entry for every teammate, including those without push enabled.
+  const { error: inboxError } = await admin.from('notifications').insert(
+    teammateIds.map((userId) => ({
+      user_id: userId,
+      actor_email: user.email,
+      title,
+      body: body || null,
+      url: url || '/dashboard'
+    }))
+  );
+  if (inboxError) console.error('Failed to store notifications:', inboxError.message);
+
+  // Unread notifications nobody opened within 30 days are dropped too.
+  await admin
+    .from('notifications')
+    .delete()
+    .lt('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
   const { data: subscriptions } = await admin
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tradepilot-shell-v3';
+const CACHE_NAME = 'tradepilot-shell-v4';
 const SHELL_ASSETS = ['/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -38,12 +38,18 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'TradePilot', {
-      body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: data.url || '/dashboard' }
-    })
+    Promise.all([
+      self.registration.showNotification(data.title || 'TradePilot', {
+        body: data.body || '',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: { url: data.url || '/dashboard' }
+      }),
+      // Lets an open app refresh its notification bell right away.
+      self.clients
+        .matchAll({ type: 'window', includeUncontrolled: true })
+        .then((clients) => clients.forEach((client) => client.postMessage({ type: 'notification' })))
+    ])
   );
 });
 

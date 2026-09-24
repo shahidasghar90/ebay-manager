@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import { NotificationBanner } from './PushNotifications';
+import NotificationBell from './NotificationBell';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -21,7 +22,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ☰
           </button>
           <div className="w-8 h-8 rounded-lg bg-blue grid place-items-center font-bold">T</div>
-          <span className="font-bold">TradePilot</span>
+          <span className="font-bold flex-1">TradePilot</span>
+          <NotificationBell />
         </header>
 
         <main className="flex-1 min-w-0 overflow-x-clip p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+16px)]">

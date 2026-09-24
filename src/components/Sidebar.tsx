@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import NotificationBell from './NotificationBell';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: '▦' },
@@ -66,6 +67,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div>
             <h1 className="text-base font-bold m-0">TradePilot</h1>
             <p className="text-xs text-slate-400 m-0">Business Console</p>
+          </div>
+          <div className="hidden md:block ml-auto">
+            <NotificationBell />
           </div>
           <button
             className="md:hidden absolute right-0 top-0 text-white text-lg p-1"
