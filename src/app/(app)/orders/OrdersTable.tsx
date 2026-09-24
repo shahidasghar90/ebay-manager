@@ -6,6 +6,15 @@ import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import type { Order } from '@/lib/types';
 import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
+/** Closed, cancelled and returned orders are booked in Accounts and can't be edited. */
+function isLocked(order: Order) {
+  return !!order.closed_at || order.order_status === 'Cancelled' || order.order_status === 'Returned';
+}
+
+function actionHref(order: Order) {
+  return isLocked(order) ? `/orders/${order.order_id}` : `/orders/${order.order_id}/edit`;
+}
+
 export default function OrdersTable({ orders }: { orders: Order[] }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -34,7 +43,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
           onChange={(event) => setSearch(event.target.value)}
         />
         <select
-          className="field-input w-auto min-w-[150px]"
+          className="field-input sm:!w-auto sm:min-w-[150px]"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
@@ -80,8 +89,8 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <RecordAuthorShort record={order} />
-                  <Link href={`/orders/${order.order_id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
-                    Edit
+                  <Link href={actionHref(order)} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
+                    {isLocked(order) ? 'View' : 'Edit'}
                   </Link>
                 </div>
               </li>
@@ -117,7 +126,11 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
               ) : (
                 filtered.map((order) => (
                   <tr key={order.order_id} className="border-b border-border">
-                    <td className="p-3 font-semibold" data-label="Order ID">{order.order_id}</td>
+                    <td className="p-3 font-semibold" data-label="Order ID">
+                      <Link href={`/orders/${order.order_id}`} className="hover:text-blue">
+                        {order.order_id}
+                      </Link>
+                    </td>
                     <td className="p-3" data-label="Date">{formatDate(order.order_date)}</td>
                     <td className="p-3" data-label="SKU">{order.sku}</td>
                     <td className="p-3 cell-wrap" data-label="Buyer">
@@ -139,16 +152,10 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                     <td className="p-3 cell-actions">
                       <div className="flex gap-1.5">
                         <Link
-                          href={`/orders/${order.order_id}`}
+                          href={actionHref(order)}
                           className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
                         >
-                          View
-                        </Link>
-                        <Link
-                          href={`/orders/${order.order_id}/edit`}
-                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                        >
-                          Edit
+                          {isLocked(order) ? 'View' : 'Edit'}
                         </Link>
                       </div>
                     </td>
