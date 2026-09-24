@@ -8,6 +8,7 @@ import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfi
 import { calculateOrderPricing } from '@/lib/orderPricing';
 import { formatMoney } from '@/lib/format';
 import type { Order, Product, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 type FormState = {
   sku: string;
@@ -213,6 +214,12 @@ export default function OrderForm({ products, order }: { products: Product[]; or
         console.error('Failed to auto-create accounts entry:', accountError.message);
       }
     }
+
+    notifyTeam(
+      isEditing ? 'Order edited' : 'New order',
+      `${orderId} · ${form.sku} · ${formatMoney(pricing.grossSaleEur)}`,
+      `/orders/${orderId}`
+    );
 
     router.push('/orders');
     router.refresh();

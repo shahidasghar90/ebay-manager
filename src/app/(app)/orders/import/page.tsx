@@ -8,6 +8,7 @@ import { fetchSettings } from '@/lib/settings';
 import { calculateOrderPricing } from '@/lib/orderPricing';
 import { parseOrderCsv, type OrderCsvInvalidRow, type OrderCsvRow } from '@/lib/orderCsv';
 import type { Product, Settings } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 export default function ImportOrdersPage() {
   const router = useRouter();
@@ -130,6 +131,11 @@ export default function ImportOrdersPage() {
     setImported(successCount);
 
     if (successCount > 0) {
+      notifyTeam(
+        'Orders imported',
+        `${successCount} order${successCount === 1 ? '' : 's'} imported from CSV`,
+        '/orders'
+      );
       router.push('/orders');
       router.refresh();
     }

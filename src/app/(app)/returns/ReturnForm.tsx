@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
 import { calculateVatAmount } from '@/lib/vat';
 import type { Order, Settings } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 export default function ReturnForm({ orders }: { orders: Order[] }) {
   const router = useRouter();
@@ -76,6 +77,12 @@ export default function ReturnForm({ orders }: { orders: Order[] }) {
     if (accountError) {
       console.error('Failed to auto-create refund accounts entry:', accountError.message);
     }
+
+    notifyTeam(
+      'New return case',
+      `${caseId}${orderId ? ` · order ${orderId}` : ''} · ${reason}`,
+      '/returns'
+    );
 
     router.push('/returns');
     router.refresh();

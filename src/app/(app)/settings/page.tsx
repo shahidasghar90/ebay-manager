@@ -6,6 +6,7 @@ import PlatformSettings from './PlatformSettings';
 import FulfillmentSettings from './FulfillmentSettings';
 import TeamSettings from './TeamSettings';
 import ChangePassword from './ChangePassword';
+import { NotificationSettings } from '@/components/PushNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,7 @@ export default async function SettingsPage() {
       <SettingsForm settings={settings} />
       <PlatformSettings />
       <FulfillmentSettings />
+      <NotificationSettings />
       <ChangePassword />
       <TeamSettings />
     </div>

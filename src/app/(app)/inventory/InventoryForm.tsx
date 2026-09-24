@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { InventoryItem, Product } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 type FormState = {
   sku: string;
@@ -93,6 +94,12 @@ export default function InventoryForm({
       setSaving(false);
       return;
     }
+
+    notifyTeam(
+      isEditing ? 'Inventory edited' : 'New inventory record',
+      `${payload.sku} · ${payload.product_name}`,
+      '/inventory'
+    );
 
     router.push('/inventory');
     router.refresh();

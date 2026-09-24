@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import { NotificationBanner } from './PushNotifications';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,6 +25,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 min-w-0 p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+          <NotificationBanner />
           {children}
         </main>
       </div>

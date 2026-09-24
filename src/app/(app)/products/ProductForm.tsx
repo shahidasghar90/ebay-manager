@@ -9,6 +9,7 @@ import { calculatePricing } from '@/lib/pricing';
 import { calculateVatAmount } from '@/lib/vat';
 import { formatMoney } from '@/lib/format';
 import type { Product, ResearchItem, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 const CATEGORY_PRESETS = [
   'Electronics',
@@ -387,6 +388,12 @@ export default function ProductForm({
       });
     }
 
+    notifyTeam(
+      isEditing ? 'Product edited' : 'New product',
+      `${sku} · ${form.productName}`,
+      `/products/${sku}`
+    );
+
     router.push('/products');
     router.refresh();
   }
@@ -629,9 +636,30 @@ export default function ProductForm({
       </FormSection>
 
       <FormSection title="Photos">
-        <label className="field-label sm:col-span-2">
+        <div className="field-label sm:col-span-2">
           Product Photos (up to 5)
-          <input type="file" accept="image/*" multiple onChange={handleImageSelect} />
+          <div className="flex flex-wrap gap-2">
+            <label className="btn-secondary cursor-pointer">
+              📷 Take Photo
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+            </label>
+            <label className="btn-secondary cursor-pointer">
+              🖼 Choose Files
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+            </label>
+          </div>
           <div className="flex flex-wrap gap-2.5 mt-2">
             {images.map((image, index) => (
               <div key={`${image.path}-${index}`} className="relative w-[72px] h-[72px]">
@@ -651,7 +679,7 @@ export default function ProductForm({
               </div>
             ))}
           </div>
-        </label>
+        </div>
       </FormSection>
 
       <FormSection title="Costing" hint="What it costs you, and what you plan to sell it for.">

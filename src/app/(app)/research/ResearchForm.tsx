@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { ResearchItem } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 type FormState = {
   keyword: string;
@@ -165,6 +166,12 @@ export default function ResearchForm({
       return;
     }
 
+    notifyTeam(
+      isEditing ? 'Research edited' : 'New product research',
+      form.keyword,
+      isEditing ? `/research/${research!.id}` : '/research'
+    );
+
     if (isEditing) {
       router.push('/research');
       router.refresh();
@@ -284,16 +291,27 @@ export default function ResearchForm({
           />
         </label>
 
-        <label className="field-label sm:col-span-2">
+        <div className="field-label sm:col-span-2">
           Image URL
-          <div className="flex gap-2 items-start">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 items-start">
             <input
-              className="field-input"
+              className="field-input basis-full sm:basis-auto"
               type="url"
               value={form.imageUrl}
               onChange={(e) => setField('imageUrl', e.target.value)}
               placeholder="Paste an image URL or upload below"
             />
+            <label className="btn-secondary whitespace-nowrap cursor-pointer">
+              📷 Camera
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploading}
+                onChange={handleImageUpload}
+              />
+            </label>
             <label className="btn-secondary whitespace-nowrap cursor-pointer">
               {uploading ? 'Uploading...' : 'Upload'}
               <input
@@ -314,7 +332,7 @@ export default function ResearchForm({
               className="mt-2 w-[72px] h-[72px] object-cover rounded-lg border border-border cursor-zoom-in"
             />
           )}
-        </label>
+        </div>
 
         <div className="field-label sm:col-span-2">
           Competitor Prices (other platforms)

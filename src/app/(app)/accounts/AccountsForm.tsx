@@ -7,6 +7,7 @@ import { fetchSettings } from '@/lib/settings';
 import { calculateVatAmount } from '@/lib/vat';
 import { formatMoney } from '@/lib/format';
 import type { AccountTx, Settings } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 type FormState = {
   txDate: string;
@@ -91,6 +92,12 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
       setError(saveError.message);
       return;
     }
+
+    notifyTeam(
+      isEditing ? 'Transaction edited' : 'New transaction',
+      `${form.type} · ${form.direction} ${formatMoney(num(form.amountEur))}`,
+      '/accounts'
+    );
 
     router.push('/accounts');
     router.refresh();

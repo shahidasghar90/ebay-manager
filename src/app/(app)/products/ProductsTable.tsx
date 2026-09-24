@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchFulfillmentModels } from '@/lib/platformConfig';
 import { formatMoney, statusClassName } from '@/lib/format';
 import type { FulfillmentModel, Product } from '@/lib/types';
+import { notifyTeam } from '@/lib/notify';
 
 export default function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -54,6 +55,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       return;
     }
 
+    notifyTeam('Product archived', sku, '/products');
     router.refresh();
   }
 
