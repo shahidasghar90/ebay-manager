@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Sidebar from './Sidebar';
 import { NotificationBanner } from './PushNotifications';
 import NotificationBell from './NotificationBell';
+import BottomNav from './BottomNav';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,11 +27,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <NotificationBell />
         </header>
 
-        <main className="flex-1 min-w-0 overflow-x-clip p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        {/* Phones reserve room for the fixed bottom tab bar. */}
+        <main className="flex-1 min-w-0 overflow-x-clip p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+88px)] md:pb-7">
           <NotificationBanner />
           {children}
         </main>
       </div>
+
+      <BottomNav onOpenMenu={() => setSidebarOpen(true)} />
     </div>
   );
 }
