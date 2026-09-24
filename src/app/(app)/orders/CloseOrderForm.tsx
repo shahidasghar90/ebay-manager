@@ -8,6 +8,9 @@ import { expectedPayout } from '@/lib/orderPricing';
 import type { Order } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 
+/** VAT eBay adds to its fees for sellers without a VAT ID (Germany: 19%). */
+const FEE_VAT_RATE = 0.19;
+
 function round2(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
@@ -21,19 +24,22 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const router = useRouter();
   const supabase = createClient();
 
-  // eBay adds 19% VAT to each fee line and rounds per line (e.g. 1.09 → 0.21,
-  // 0.35 → 0.07 = 0.28), so the suggestion matches the eBay breakdown.
-  const suggestedFeeVat =
-    Math.round((round2(Number(order.ebay_fee_eur || 0) * 0.19) + round2(Number(order.payment_fee_eur || 0) * 0.19)) * 100) /
-    100;
-  const [feeVat, setFeeVat] = useState(String(suggestedFeeVat));
-  const expected = expectedPayout(order, num(feeVat));
-  const [actual, setActual] = useState(String(expectedPayout(order, suggestedFeeVat)));
+  // Only the amount received is needed. Everything eBay kept (gross − received)
+  // is fees incl. 19% VAT, so the VAT part is worked out from that; whatever
+  // differs from the estimated fees becomes the Adjustment.
+  const [actual, setActual] = useState('');
+  const [feeVatOverride, setFeeVatOverride] = useState<string | null>(null);
   const [payoutDate, setPayoutDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const adjustment = Math.round((num(actual) - expected) * 100) / 100;
+  const hasActual = actual.trim() !== '';
+  const deducted = hasActual ? Math.max(round2(Number(order.gross_sale_eur || 0) - num(actual)), 0) : 0;
+  const autoFeeVat = round2(deducted - deducted / (1 + FEE_VAT_RATE));
+  const feeVat = feeVatOverride ?? String(autoFeeVat);
+
+  const expected = expectedPayout(order, num(feeVat));
+  const adjustment = hasActual ? round2(num(actual) - expected) : 0;
   const fees = Number(order.ebay_fee_eur || 0) + Number(order.payment_fee_eur || 0);
   const shipping = Number(order.shipping_packaging_cost_eur || 0);
 
@@ -70,8 +76,8 @@ export default function CloseOrderForm({ order }: { order: Order }) {
       <div className="card p-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <PreviewField label="Gross Sale" value={formatMoney(order.gross_sale_eur)} />
-          <PreviewField label="Fees" value={formatMoney(fees)} />
-          <PreviewField label="Expected Payout" value={formatMoney(expected)} />
+          <PreviewField label="eBay Kept" value={hasActual ? formatMoney(deducted) : '—'} />
+          <PreviewField label="Estimated Fees" value={formatMoney(fees)} />
           <PreviewField
             label="Adjustment"
             value={formatMoney(adjustment)}
@@ -90,6 +96,8 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               min="0"
               step="0.01"
               required
+              autoFocus
+              placeholder={String(expectedPayout(order))}
               value={actual}
               onChange={(e) => setActual(e.target.value)}
             />
@@ -106,17 +114,20 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               min="0"
               step="0.01"
               value={feeVat}
-              onChange={(e) => setFeeVat(e.target.value)}
+              onChange={(e) => setFeeVatOverride(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              eBay &quot;VAT (19%)&quot; line.{' '}
-              <button
-                type="button"
-                className="text-blue font-bold underline"
-                onClick={() => setFeeVat(String(suggestedFeeVat))}
-              >
-                Use 19% of fees ({formatMoney(suggestedFeeVat)})
-              </button>
+              {feeVatOverride === null ? (
+                'Worked out automatically. Change it only if eBay shows a different VAT.'
+              ) : (
+                <button
+                  type="button"
+                  className="text-blue font-bold underline"
+                  onClick={() => setFeeVatOverride(null)}
+                >
+                  Back to automatic ({formatMoney(autoFeeVat)})
+                </button>
+              )}
             </small>
           </label>
 
@@ -138,7 +149,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
           <LedgerLine label="Fees" direction="Out" amount={fees} />
           {num(feeVat) > 0 && <LedgerLine label="VAT on Fees" direction="Out" amount={num(feeVat)} />}
           {shipping > 0 && <LedgerLine label="Shipping" direction="Out" amount={shipping} />}
-          {adjustment !== 0 && (
+          {hasActual && adjustment !== 0 && (
             <LedgerLine
               label="Adjustment"
               direction={adjustment > 0 ? 'In' : 'Out'}
