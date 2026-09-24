@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/compressImage';
+import { storageSafe } from '@/lib/storagePath';
 import { createClient } from '@/lib/supabase/client';
 import type { ResearchItem } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
@@ -110,8 +111,8 @@ export default function ResearchForm({
     setError('');
 
     const file = await compressImage(picked);
-    const folder = form.keyword.replace(/[\\/:*?"<>|]/g, '-') || 'Uncategorized';
-    const path = `research/${folder}/${Date.now()}_${file.name}`;
+    const folder = storageSafe(form.keyword);
+    const path = `research/${folder}/${Date.now()}_${storageSafe(file.name, 'image')}`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')

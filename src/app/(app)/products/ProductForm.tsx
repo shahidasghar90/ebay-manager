@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/compressImage';
+import { storageSafe } from '@/lib/storagePath';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
 import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfig';
@@ -253,9 +254,9 @@ export default function ProductForm({
     for (const original of files) {
       const file = await compressImage(original);
       const folder = [form.condition || 'Uncategorized', form.category || 'Uncategorized', form.productName || 'product']
-        .map((segment) => segment.replace(/[\\/:*?"<>|]/g, '-'))
+        .map((segment) => storageSafe(segment))
         .join('/');
-      const path = `${folder}/${Date.now()}_${file.name}`;
+      const path = `${folder}/${Date.now()}_${storageSafe(file.name, 'image')}`;
 
       const { error: uploadError } = await supabase.storage
         .from('product-images')
