@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDate, formatMoney } from '@/lib/format';
 import { summarizeVat } from '@/lib/vat';
+import { buildLedgerRows, signedAmount } from '@/lib/ledgerRows';
 import type { AccountTx } from '@/lib/types';
 import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
@@ -17,31 +18,33 @@ export default function AccountsTable({
   const [directionFilter, setDirectionFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
 
-  const filtered = useMemo(() => {
-    return transactions.filter((tx) => {
-      if (directionFilter && tx.direction !== directionFilter) return false;
-      if (typeFilter && tx.type !== typeFilter) return false;
-      return true;
-    });
-  }, [transactions, directionFilter, typeFilter]);
+  const typeFiltered = useMemo(
+    () => (typeFilter ? transactions.filter((tx) => tx.type === typeFilter) : transactions),
+    [transactions, typeFilter]
+  );
+
+  // A type filter looks at single entries (e.g. every Fee VAT line); otherwise
+  // each order/return is one row with its net amount.
+  const rows = useMemo(() => {
+    const all = typeFilter ? typeFiltered.map((tx) => buildLedgerRows([tx])[0]) : buildLedgerRows(typeFiltered);
+    if (!directionFilter) return all;
+    return all.filter((row) => (directionFilter === 'In' ? row.netEur >= 0 : row.netEur < 0));
+  }, [typeFiltered, typeFilter, directionFilter]);
 
   const totals = useMemo(() => {
-    const totalIn = filtered
-      .filter((tx) => tx.direction === 'In')
-      .reduce((sum, tx) => sum + Number(tx.amount_eur || 0), 0);
-    const totalOut = filtered
-      .filter((tx) => tx.direction === 'Out')
-      .reduce((sum, tx) => sum + Number(tx.amount_eur || 0), 0);
+    const totalIn = rows.filter((row) => row.netEur >= 0).reduce((sum, row) => sum + row.netEur, 0);
+    const totalOut = rows.filter((row) => row.netEur < 0).reduce((sum, row) => sum - row.netEur, 0);
 
     // VAT eBay charged on its fees: a cost, not reclaimable without VAT registration.
-    const feeVat = filtered
+    const feeVat = rows
+      .flatMap((row) => row.parts)
       .filter((tx) => tx.type === 'Fee VAT')
       .reduce((sum, tx) => sum + Number(tx.amount_eur || 0), 0);
 
     return { totalIn, totalOut, net: totalIn - totalOut, feeVat };
-  }, [filtered]);
+  }, [rows]);
 
-  const vatSummary = useMemo(() => summarizeVat(filtered), [filtered]);
+  const vatSummary = useMemo(() => summarizeVat(rows.flatMap((row) => row.parts)), [rows]);
 
   const types = useMemo(
     () => Array.from(new Set(transactions.map((tx) => tx.type))).sort(),
@@ -98,40 +101,51 @@ export default function AccountsTable({
         </select>
       </div>
 
-      {/* Phones: one compact card per transaction. */}
+      {/* Phones: one compact card per row. */}
       <ul className="md:hidden grid gap-2.5">
-        {filtered.length === 0 ? (
+        {rows.length === 0 ? (
           <li className="card p-6 text-center text-muted">No transactions found.</li>
         ) : (
-          filtered.map((tx) => (
-            <li key={tx.tx_id} className="card p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <strong className="text-sm block truncate">{tx.type}</strong>
-                  <span className="text-muted text-xs block truncate">
-                    {formatDate(tx.tx_date)} · {tx.category}
-                  </span>
+          rows.map((row) => {
+            const grouped = row.parts.length > 1;
+            return (
+              <li key={row.key} className="card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <strong className="text-sm block truncate">
+                      {row.title}
+                      {grouped && <span className="font-normal"> · {row.category}</span>}
+                    </strong>
+                    <span className="text-muted text-xs block truncate">
+                      {formatDate(row.date)}
+                      {!grouped && ` · ${row.category}`}
+                    </span>
+                  </div>
+                  <Amount value={row.netEur} className="shrink-0 text-base" />
                 </div>
-                <strong className={`shrink-0 text-base ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
-                  {tx.direction === 'In' ? '+' : '−'}
-                  {formatMoney(tx.amount_eur)}
-                </strong>
-              </div>
-              {(tx.notes || (vatRegistered && tx.vat_amount_eur != null)) && (
-                <p className="text-[13px] text-muted m-0 mt-1.5 break-words line-clamp-2">
-                  {vatRegistered && tx.vat_amount_eur != null && `VAT ${formatMoney(tx.vat_amount_eur)}`}
-                  {vatRegistered && tx.vat_amount_eur != null && tx.notes && ' · '}
-                  {tx.notes}
-                </p>
-              )}
-              <div className="flex items-center justify-between gap-2 mt-2">
-                <RecordAuthorShort record={tx} />
-                <Link href={`/accounts/${tx.tx_id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
-                  Edit
-                </Link>
-              </div>
-            </li>
-          ))
+                {grouped ? (
+                  <Breakdown parts={row.parts} />
+                ) : (
+                  (row.notes || (vatRegistered && row.vatEur != null)) && (
+                    <p className="text-[13px] text-muted m-0 mt-1.5 break-words line-clamp-2">
+                      {vatRegistered && row.vatEur != null && `VAT ${formatMoney(row.vatEur)}`}
+                      {vatRegistered && row.vatEur != null && row.notes && ' · '}
+                      {row.notes}
+                    </p>
+                  )
+                )}
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <RecordAuthorShort record={row.author} />
+                  <Link
+                    href={row.href}
+                    className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0"
+                  >
+                    {grouped ? 'View' : 'Edit'}
+                  </Link>
+                </div>
+              </li>
+            );
+          })
         )}
       </ul>
 
@@ -145,56 +159,93 @@ export default function AccountsTable({
                 <th className="p-3">Category</th>
                 <th className="p-3">Amount</th>
                 {vatRegistered && <th className="p-3">VAT</th>}
-                <th className="p-3">Direction</th>
-                <th className="p-3">Notes</th>
+                <th className="p-3">Details</th>
                 <th className="p-3">Last Edited</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={vatRegistered ? 9 : 8} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={vatRegistered ? 8 : 7} className="cell-empty text-center text-muted p-5">
                     No transactions found.
                   </td>
                 </tr>
               ) : (
-                filtered.map((tx) => (
-                  <tr key={tx.tx_id} className="border-b border-border">
-                    <td className="p-3" data-label="Date">{formatDate(tx.tx_date)}</td>
-                    <td className="p-3 font-semibold" data-label="Type">{tx.type}</td>
-                    <td className="p-3" data-label="Category">{tx.category}</td>
-                    <td data-label="Amount" className={`p-3 ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
-                      {formatMoney(tx.amount_eur)}
-                    </td>
-                    {vatRegistered && (
-                      <td className="p-3" data-label="VAT">
-                        {tx.vat_amount_eur != null ? formatMoney(tx.vat_amount_eur) : '—'}
+                rows.map((row) => {
+                  const grouped = row.parts.length > 1;
+                  return (
+                    <tr key={row.key} className="border-b border-border">
+                      <td className="p-3" data-label="Date">{formatDate(row.date)}</td>
+                      <td className="p-3 font-semibold" data-label="Type">{row.title}</td>
+                      <td className="p-3" data-label="Category">
+                        {grouped ? (
+                          <Link href={row.href} className="font-semibold hover:text-blue">
+                            {row.category}
+                          </Link>
+                        ) : (
+                          row.category
+                        )}
                       </td>
-                    )}
-                    <td className="p-3" data-label="Direction">{tx.direction}</td>
-                    <td className="p-3 cell-wrap w-full" data-label="Notes">
-                      <span className="line-clamp-2" title={tx.notes || undefined}>{tx.notes || '—'}</span>
-                    </td>
-                    <td className="p-3" data-label="Last Edited">
-                      <RecordAuthorCell record={tx} />
-                    </td>
-                    <td className="p-3 cell-actions">
-                      <Link
-                        href={`/accounts/${tx.tx_id}/edit`}
-                        className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                      <td className="p-3" data-label="Amount">
+                        <Amount value={row.netEur} />
+                      </td>
+                      {vatRegistered && (
+                        <td className="p-3" data-label="VAT">
+                          {row.vatEur != null ? formatMoney(row.vatEur) : '—'}
+                        </td>
+                      )}
+                      <td className="p-3 cell-wrap w-full" data-label="Details">
+                        {grouped ? (
+                          <Breakdown parts={row.parts} />
+                        ) : (
+                          <span className="line-clamp-2" title={row.notes || undefined}>
+                            {row.notes || '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3" data-label="Last Edited">
+                        <RecordAuthorCell record={row.author} />
+                      </td>
+                      <td className="p-3 cell-actions">
+                        <Link
+                          href={row.href}
+                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                        >
+                          {grouped ? 'View' : 'Edit'}
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  );
+}
+
+function Amount({ value, className = '' }: { value: number; className?: string }) {
+  return (
+    <strong className={`${value >= 0 ? 'text-green' : 'text-red'} ${className}`}>
+      {value >= 0 ? '+' : '−'}
+      {formatMoney(Math.abs(value))}
+    </strong>
+  );
+}
+
+/** "Sale +7,80 € · Fees -1,59 € · ..." for one order or return. */
+function Breakdown({ parts }: { parts: AccountTx[] }) {
+  return (
+    <p className="text-xs text-muted m-0 mt-1.5 md:mt-0 flex flex-wrap gap-x-2.5 gap-y-0.5">
+      {parts.map((tx) => (
+        <span key={tx.tx_id} className="whitespace-nowrap">
+          {tx.type} <Amount value={signedAmount(tx)} />
+        </span>
+      ))}
+    </p>
   );
 }
 

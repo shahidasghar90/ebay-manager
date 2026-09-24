@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import { expectedPayout } from '@/lib/orderPricing';
+import { buildLedgerRows } from '@/lib/ledgerRows';
 import type { AccountTx, Order } from '@/lib/types';
 import { RecordAuthorLine } from '@/components/RecordAuthor';
 import OrderActions from '../OrderActions';
@@ -49,6 +50,8 @@ export default async function OrderDetailPage({
 
   const order = data as Order;
   const ledger = (entries as AccountTx[]) || [];
+  // Same grouping as the Accounts page: fixed order + net total.
+  const ledgerRow = buildLedgerRows(ledger)[0];
   const adjustment = Number(order.adjustment_eur || 0);
 
   return (
@@ -104,13 +107,13 @@ export default async function OrderDetailPage({
           <Field label="Payout Date" value={formatDate(order.payout_date)} />
         </Section>
 
-        {ledger.length > 0 && (
+        {ledgerRow && (
           <div>
             <h4 className="text-xs uppercase tracking-wide text-blue font-bold border-b border-border pb-1.5 mb-2.5">
-              Accounts Entries
+              Money Breakdown
             </h4>
             <ul className="grid gap-0 m-0 p-0 list-none text-sm">
-              {ledger.map((tx) => (
+              {ledgerRow.parts.map((tx) => (
                 <li
                   key={tx.tx_id}
                   className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-b-0"
@@ -127,6 +130,13 @@ export default async function OrderDetailPage({
                   </strong>
                 </li>
               ))}
+              <li className="flex items-center justify-between gap-3 pt-2">
+                <strong>Net to you</strong>
+                <strong className={ledgerRow.netEur >= 0 ? 'text-green' : 'text-red'}>
+                  {ledgerRow.netEur >= 0 ? '+' : '−'}
+                  {formatMoney(Math.abs(ledgerRow.netEur))}
+                </strong>
+              </li>
             </ul>
           </div>
         )}
