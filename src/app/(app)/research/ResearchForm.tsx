@@ -409,7 +409,7 @@ export default function ResearchForm({
 
       {previewOpen && form.imageUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 cursor-zoom-out"
+          className="fixed inset-0 z-[510] bg-black/80 flex items-center justify-center p-6 cursor-zoom-out"
           onClick={() => setPreviewOpen(false)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

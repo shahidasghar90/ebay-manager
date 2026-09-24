@@ -166,7 +166,7 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
 
       {previewUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 grid place-items-center p-4 cursor-zoom-out"
+          className="fixed inset-0 z-[510] bg-black/80 grid place-items-center p-4 cursor-zoom-out"
           onClick={() => setPreviewUrl(null)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

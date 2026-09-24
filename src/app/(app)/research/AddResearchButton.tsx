@@ -16,7 +16,7 @@ export default function AddResearchButton() {
 
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+          className="fixed inset-0 z-[500] bg-black/60 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
           onClick={(e) => {
             if (e.target === e.currentTarget) setOpen(false);
           }}
