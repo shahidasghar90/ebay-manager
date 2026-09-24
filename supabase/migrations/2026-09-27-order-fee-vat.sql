@@ -125,3 +125,6 @@ begin
   return o;
 end;
 $$;
+
+-- Make the API (PostgREST) pick up the new close_order signature right away.
+notify pgrst, 'reload schema';
