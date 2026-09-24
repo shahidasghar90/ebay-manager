@@ -3,6 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { AccountTx } from '@/lib/types';
 import AccountsForm from '../../AccountsForm';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 export default async function EditAccountsTxPage({
   params
@@ -18,6 +19,7 @@ export default async function EditAccountsTxPage({
   return (
     <div>
       <PageHeader title={`Edit Transaction — ${tx.tx_id}`} subtitle={tx.category} />
+      <RecordAuthorLine record={(tx as AccountTx)} />
       <AccountsForm tx={tx as AccountTx} />
     </div>
   );

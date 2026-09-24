@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { formatMoney } from '@/lib/format';
 import type { Product } from '@/lib/types';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 function pct(value: number) {
   return `${(Number(value || 0) * 100).toFixed(1)}%`;
@@ -64,6 +65,7 @@ export default async function ProductDetailPage({
           </>
         }
       />
+      <RecordAuthorLine record={product} />
 
       <div className="card p-5 grid gap-6">
         {product.image_urls?.length > 0 && (

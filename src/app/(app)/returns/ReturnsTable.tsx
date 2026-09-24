@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import type { ReturnCase } from '@/lib/types';
+import { RecordAuthorCell } from '@/components/RecordAuthor';
 
 export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
   if (cases.length === 0) {
@@ -21,6 +22,7 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
               <th className="p-3">Reason</th>
               <th className="p-3">Refund</th>
               <th className="p-3">Net Loss</th>
+              <th className="p-3">Last Edited</th>
               <th className="p-3">Status</th>
             </tr>
           </thead>
@@ -33,6 +35,9 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
                 <td className="p-3" data-label="Reason">{item.reason}</td>
                 <td className="p-3" data-label="Refund">{formatMoney(item.refund_eur)}</td>
                 <td className="p-3" data-label="Net Loss">{formatMoney(item.net_loss_eur)}</td>
+                <td className="p-3" data-label="Last Edited">
+                  <RecordAuthorCell record={item} />
+                </td>
                 <td className="p-3" data-label="Status">
                   <span className={statusClassName(item.status)}>{item.status}</span>
                 </td>

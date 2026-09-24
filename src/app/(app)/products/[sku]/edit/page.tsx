@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import ProductForm from '../../ProductForm';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 export default async function EditProductPage({
   params
@@ -21,6 +22,7 @@ export default async function EditProductPage({
   return (
     <div>
       <PageHeader title={`Edit Product — ${product.sku}`} subtitle={product.product_name} />
+      <RecordAuthorLine record={product} />
       <ProductForm product={product} />
     </div>
   );

@@ -3,6 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { Order, Product } from '@/lib/types';
 import OrderForm from '../../OrderForm';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 export default async function EditOrderPage({
   params
@@ -22,6 +23,7 @@ export default async function EditOrderPage({
   return (
     <div>
       <PageHeader title={`Edit Order — ${order.order_id}`} subtitle={order.product_name || ''} />
+      <RecordAuthorLine record={order} />
       <OrderForm order={order as Order} products={(products as Product[]) || []} />
     </div>
   );

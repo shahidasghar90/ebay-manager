@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import type { Order } from '@/lib/types';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -54,6 +55,7 @@ export default async function OrderDetailPage({
           </>
         }
       />
+      <RecordAuthorLine record={order} />
 
       <div className="card p-5 grid gap-6">
         <Section title="Overview">

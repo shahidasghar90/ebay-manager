@@ -1,4 +1,11 @@
-export type Product = {
+/** Stamped by the stamp_record_author trigger (see supabase/migrations). */
+export type RecordAuthor = {
+  created_by?: string | null;
+  updated_by?: string | null;
+  updated_at?: string | null;
+};
+
+export type Product = RecordAuthor & {
   sku: string;
   product_name: string;
   category: string | null;
@@ -50,7 +57,7 @@ export type Product = {
   updated_at: string;
 };
 
-export type Order = {
+export type Order = RecordAuthor & {
   order_id: string;
   order_date: string;
   sales_platform: string;
@@ -83,7 +90,7 @@ export type Order = {
   created_at: string;
 };
 
-export type InventoryItem = {
+export type InventoryItem = RecordAuthor & {
   id: string;
   sku: string;
   product_name: string;
@@ -100,7 +107,7 @@ export type InventoryItem = {
   notes: string | null;
 };
 
-export type AccountTx = {
+export type AccountTx = RecordAuthor & {
   tx_id: string;
   tx_date: string;
   type: string;
@@ -112,7 +119,7 @@ export type AccountTx = {
   notes: string | null;
 };
 
-export type ReturnCase = {
+export type ReturnCase = RecordAuthor & {
   case_id: string;
   order_id: string | null;
   case_date: string;
@@ -123,7 +130,7 @@ export type ReturnCase = {
   notes: string | null;
 };
 
-export type ResearchItem = {
+export type ResearchItem = RecordAuthor & {
   id: number;
   keyword: string;
   product_title: string | null;

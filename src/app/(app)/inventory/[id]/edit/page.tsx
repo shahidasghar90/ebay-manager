@@ -3,6 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { InventoryItem, Product } from '@/lib/types';
 import InventoryForm from '../../InventoryForm';
+import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 export default async function EditInventoryItemPage({
   params
@@ -22,6 +23,7 @@ export default async function EditInventoryItemPage({
   return (
     <div>
       <PageHeader title={`Edit Inventory — ${item.sku}`} subtitle={item.product_name} />
+      <RecordAuthorLine record={(item as InventoryItem)} />
       <InventoryForm item={item as InventoryItem} products={(products as Product[]) || []} />
     </div>
   );

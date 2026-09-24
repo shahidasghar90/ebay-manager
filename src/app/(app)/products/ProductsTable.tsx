@@ -8,6 +8,7 @@ import { fetchFulfillmentModels } from '@/lib/platformConfig';
 import { formatMoney, statusClassName } from '@/lib/format';
 import type { FulfillmentModel, Product } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
+import { RecordAuthorCell } from '@/components/RecordAuthor';
 
 export default function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -110,6 +111,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 <th className="p-3">Cost EUR</th>
                 <th className="p-3">Sale Price</th>
                 <th className="p-3">Profit</th>
+                <th className="p-3">Last Edited</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -117,7 +119,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={11} className="cell-empty text-center text-muted p-5">
                     No products found.
                   </td>
                 </tr>
@@ -141,6 +143,9 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                     <td className="p-3" data-label="Cost EUR">{formatMoney(product.total_cost_eur)}</td>
                     <td className="p-3" data-label="Sale Price">{formatMoney(product.current_sale_price_eur)}</td>
                     <td className="p-3" data-label="Profit">{formatMoney(product.estimated_net_profit_eur)}</td>
+                    <td className="p-3" data-label="Last Edited">
+                      <RecordAuthorCell record={product} />
+                    </td>
                     <td className="p-3" data-label="Status">
                       <span className={statusClassName(product.product_status)}>
                         {product.product_status}

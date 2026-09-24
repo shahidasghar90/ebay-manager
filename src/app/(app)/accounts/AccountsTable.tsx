@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatDate, formatMoney } from '@/lib/format';
 import { summarizeVat } from '@/lib/vat';
 import type { AccountTx } from '@/lib/types';
+import { RecordAuthorCell } from '@/components/RecordAuthor';
 
 export default function AccountsTable({
   transactions,
@@ -103,13 +104,14 @@ export default function AccountsTable({
                 {vatRegistered && <th className="p-3">VAT</th>}
                 <th className="p-3">Direction</th>
                 <th className="p-3">Notes</th>
+                <th className="p-3">Last Edited</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={vatRegistered ? 8 : 7} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={vatRegistered ? 9 : 8} className="cell-empty text-center text-muted p-5">
                     No transactions found.
                   </td>
                 </tr>
@@ -129,6 +131,9 @@ export default function AccountsTable({
                     )}
                     <td className="p-3" data-label="Direction">{tx.direction}</td>
                     <td className="p-3" data-label="Notes">{tx.notes || '—'}</td>
+                    <td className="p-3" data-label="Last Edited">
+                      <RecordAuthorCell record={tx} />
+                    </td>
                     <td className="p-3 cell-actions">
                       <Link
                         href={`/accounts/${tx.tx_id}/edit`}

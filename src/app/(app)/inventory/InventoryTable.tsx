@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { InventoryItem } from '@/lib/types';
+import { RecordAuthorCell } from '@/components/RecordAuthor';
 
 function reorderAlert(item: InventoryItem): { label: string; className: string } {
   if (item.inventory_type === 'Dropship') {
@@ -51,6 +52,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                 <th className="p-3">On Hand</th>
                 <th className="p-3">Reserved</th>
                 <th className="p-3">Available</th>
+                <th className="p-3">Last Edited</th>
                 <th className="p-3">Alert</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -58,7 +60,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={9} className="cell-empty text-center text-muted p-5">
                     No inventory records found.
                   </td>
                 </tr>
@@ -78,6 +80,9 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                       <td className="p-3" data-label="On Hand">{item.quantity_on_hand}</td>
                       <td className="p-3" data-label="Reserved">{item.quantity_reserved}</td>
                       <td className="p-3" data-label="Available">{available}</td>
+                      <td className="p-3" data-label="Last Edited">
+                        <RecordAuthorCell record={item} />
+                      </td>
                       <td className="p-3" data-label="Alert">
                         <span className={alert.className}>{alert.label}</span>
                       </td>

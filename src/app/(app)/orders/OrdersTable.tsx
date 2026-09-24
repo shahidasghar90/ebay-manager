@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import type { Order } from '@/lib/types';
+import { RecordAuthorCell } from '@/components/RecordAuthor';
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
   const [search, setSearch] = useState('');
@@ -57,6 +58,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                 <th className="p-3">Qty</th>
                 <th className="p-3">Sale</th>
                 <th className="p-3">Profit</th>
+                <th className="p-3">Last Edited</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -64,7 +66,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={10} className="cell-empty text-center text-muted p-5">
                     No orders found.
                   </td>
                 </tr>
@@ -78,6 +80,9 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                     <td className="p-3" data-label="Qty">{order.quantity}</td>
                     <td className="p-3" data-label="Sale">{formatMoney(order.gross_sale_eur)}</td>
                     <td className="p-3" data-label="Profit">{formatMoney(order.net_profit_eur)}</td>
+                    <td className="p-3" data-label="Last Edited">
+                      <RecordAuthorCell record={order} />
+                    </td>
                     <td className="p-3" data-label="Status">
                       <span className={statusClassName(order.order_status)}>
                         {order.order_status}
