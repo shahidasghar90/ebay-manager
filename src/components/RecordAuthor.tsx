@@ -35,6 +35,16 @@ export function RecordAuthorLine({ record }: { record: RecordAuthor }) {
   );
 }
 
+/** Tiny "by sara" for mobile cards. */
+export function RecordAuthorShort({ record }: { record: RecordAuthor }) {
+  const who = record.updated_by || record.created_by;
+  return (
+    <span className="text-muted text-[11px] truncate" title={who || undefined}>
+      {who ? `by ${shortName(who)}` : ''}
+    </span>
+  );
+}
+
 /** Compact "sara · 24.09.26, 15:02" for list tables. */
 export function RecordAuthorCell({ record }: { record: RecordAuthor }) {
   const who = record.updated_by || record.created_by;

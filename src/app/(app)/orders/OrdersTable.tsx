@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
 import type { Order } from '@/lib/types';
-import { RecordAuthorCell } from '@/components/RecordAuthor';
+import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
   const [search, setSearch] = useState('');
@@ -46,7 +46,49 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
         </select>
       </div>
 
-      <div className="card overflow-hidden">
+      {/* Phones: one compact card per order. */}
+      <ul className="md:hidden grid gap-2.5 mb-0">
+        {filtered.length === 0 ? (
+          <li className="card p-6 text-center text-muted">No orders found.</li>
+        ) : (
+          filtered.map((order) => {
+            const profit = Number(order.net_profit_eur || 0);
+            return (
+              <li key={order.order_id} className="card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <Link href={`/orders/${order.order_id}`} className="font-bold text-sm break-all">
+                    {order.order_id}
+                  </Link>
+                  <span className={`${statusClassName(order.order_status)} shrink-0`}>
+                    {order.order_status}
+                  </span>
+                </div>
+                <p className="text-muted text-xs m-0 mt-0.5 truncate">
+                  {formatDate(order.order_date)} · {order.sku} · Qty {order.quantity}
+                  {order.buyer_username ? ` · ${order.buyer_username}` : ''}
+                </p>
+                <p className="text-[13px] m-0 mt-1.5 flex flex-wrap gap-x-3">
+                  <span>
+                    Sale <strong>{formatMoney(order.gross_sale_eur)}</strong>
+                  </span>
+                  <span>
+                    Profit{' '}
+                    <strong className={profit < 0 ? 'text-red' : 'text-green'}>{formatMoney(profit)}</strong>
+                  </span>
+                </p>
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <RecordAuthorShort record={order} />
+                  <Link href={`/orders/${order.order_id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
+                    Edit
+                  </Link>
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
+
+      <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="responsive-table w-full text-sm md:min-w-[760px]">
             <thead>

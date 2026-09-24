@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { formatDate, formatMoney } from '@/lib/format';
 import { summarizeVat } from '@/lib/vat';
 import type { AccountTx } from '@/lib/types';
-import { RecordAuthorCell } from '@/components/RecordAuthor';
+import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
 export default function AccountsTable({
   transactions,
@@ -92,7 +92,44 @@ export default function AccountsTable({
         </select>
       </div>
 
-      <div className="card overflow-hidden">
+      {/* Phones: one compact card per transaction. */}
+      <ul className="md:hidden grid gap-2.5">
+        {filtered.length === 0 ? (
+          <li className="card p-6 text-center text-muted">No transactions found.</li>
+        ) : (
+          filtered.map((tx) => (
+            <li key={tx.tx_id} className="card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <strong className="text-sm block truncate">{tx.type}</strong>
+                  <span className="text-muted text-xs block truncate">
+                    {formatDate(tx.tx_date)} · {tx.category}
+                  </span>
+                </div>
+                <strong className={`shrink-0 text-base ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
+                  {tx.direction === 'In' ? '+' : '−'}
+                  {formatMoney(tx.amount_eur)}
+                </strong>
+              </div>
+              {(tx.notes || (vatRegistered && tx.vat_amount_eur != null)) && (
+                <p className="text-[13px] text-muted m-0 mt-1.5 break-words line-clamp-2">
+                  {vatRegistered && tx.vat_amount_eur != null && `VAT ${formatMoney(tx.vat_amount_eur)}`}
+                  {vatRegistered && tx.vat_amount_eur != null && tx.notes && ' · '}
+                  {tx.notes}
+                </p>
+              )}
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <RecordAuthorShort record={tx} />
+                <Link href={`/accounts/${tx.tx_id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
+                  Edit
+                </Link>
+              </div>
+            </li>
+          ))
+        )}
+      </ul>
+
+      <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="responsive-table w-full text-sm md:min-w-[720px]">
             <thead>

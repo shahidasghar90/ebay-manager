@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { InventoryItem } from '@/lib/types';
-import { RecordAuthorCell } from '@/components/RecordAuthor';
+import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
 function reorderAlert(item: InventoryItem): { label: string; className: string } {
   if (item.inventory_type === 'Dropship') {
@@ -41,7 +41,51 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
         onChange={(event) => setSearch(event.target.value)}
       />
 
-      <div className="card overflow-hidden">
+      {/* Phones: one compact card per stock record. */}
+      <ul className="md:hidden grid gap-2.5">
+        {filtered.length === 0 ? (
+          <li className="card p-6 text-center text-muted">No inventory records found.</li>
+        ) : (
+          filtered.map((item) => {
+            const alert = reorderAlert(item);
+            const available =
+              item.inventory_type === 'Dropship'
+                ? 'N/A'
+                : String(item.quantity_on_hand - item.quantity_reserved);
+
+            return (
+              <li key={item.id} className="card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <strong className="text-sm leading-snug line-clamp-2 break-words">{item.product_name}</strong>
+                  <span className={`${alert.className} shrink-0`}>{alert.label}</span>
+                </div>
+                <p className="text-muted text-xs m-0 mt-0.5 truncate">
+                  {item.sku} · {item.inventory_type}
+                </p>
+                <p className="text-[13px] m-0 mt-1.5 flex flex-wrap gap-x-3">
+                  <span>
+                    On hand <strong>{item.quantity_on_hand}</strong>
+                  </span>
+                  <span>
+                    Reserved <strong>{item.quantity_reserved}</strong>
+                  </span>
+                  <span>
+                    Available <strong>{available}</strong>
+                  </span>
+                </p>
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <RecordAuthorShort record={item} />
+                  <Link href={`/inventory/${item.id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
+                    Edit
+                  </Link>
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
+
+      <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="responsive-table w-full text-sm md:min-w-[720px]">
             <thead>
