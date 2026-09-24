@@ -23,6 +23,19 @@ function isStandalone() {
   );
 }
 
+async function saveSubscription(subscription: PushSubscription) {
+  const response = await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(subscription.toJSON())
+  });
+
+  if (!response.ok) {
+    const { error: message } = await response.json().catch(() => ({ error: '' }));
+    throw new Error(message || 'Could not save subscription');
+  }
+}
+
 function usePushSubscription() {
   const [state, setState] = useState<PushState>('loading');
   const [busy, setBusy] = useState(false);
@@ -42,7 +55,12 @@ function usePushSubscription() {
 
     navigator.serviceWorker.ready
       .then((registration) => registration.pushManager.getSubscription())
-      .then((subscription) => setState(subscription ? 'on' : 'off'))
+      .then((subscription) => {
+        setState(subscription ? 'on' : 'off');
+        // Re-save on every visit: an earlier save may have failed while the browser
+        // kept the subscription, which would otherwise look "on" but never receive.
+        if (subscription) saveSubscription(subscription).catch(() => {});
+      })
       .catch(() => setState('off'));
   }, []);
 
@@ -68,16 +86,7 @@ function usePushSubscription() {
           applicationServerKey: urlBase64ToUint8Array(publicKey)
         }));
 
-      const response = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscription.toJSON())
-      });
-
-      if (!response.ok) {
-        const { error: message } = await response.json().catch(() => ({ error: '' }));
-        throw new Error(message || 'Could not save subscription');
-      }
+      await saveSubscription(subscription);
 
       setState('on');
     } catch (err) {
@@ -112,7 +121,37 @@ function usePushSubscription() {
     }
   }, []);
 
-  return { state, busy, error, enable, disable };
+  const sendTest = useCallback(async () => {
+    setBusy(true);
+    setError('');
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        setState('off');
+        throw new Error('This device is not subscribed. Enable notifications first.');
+      }
+
+      await saveSubscription(subscription);
+      const response = await fetch('/api/push/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: subscription.endpoint })
+      });
+
+      if (!response.ok) {
+        const { error: message } = await response.json().catch(() => ({ error: '' }));
+        throw new Error(message || 'Could not send test notification');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send test notification');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  return { state, busy, error, enable, disable, sendTest };
 }
 
 export function NotificationBanner() {
@@ -164,7 +203,7 @@ export function NotificationBanner() {
 }
 
 export function NotificationSettings() {
-  const { state, busy, error, enable, disable } = usePushSubscription();
+  const { state, busy, error, enable, disable, sendTest } = usePushSubscription();
 
   const description: Record<PushState, string> = {
     loading: 'Checking this device...',
@@ -193,9 +232,14 @@ export function NotificationSettings() {
               {busy ? 'Enabling...' : 'Enable notifications on this device'}
             </button>
           ) : (
-            <button type="button" className="btn-secondary" onClick={disable} disabled={busy}>
-              {busy ? 'Turning off...' : 'Turn off on this device'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn-primary" onClick={sendTest} disabled={busy}>
+                {busy ? 'Working...' : 'Send test notification'}
+              </button>
+              <button type="button" className="btn-secondary" onClick={disable} disabled={busy}>
+                Turn off on this device
+              </button>
+            </div>
           )}
         </div>
       )}
