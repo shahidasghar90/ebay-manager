@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { compressImage } from '@/lib/compressImage';
 import { createClient } from '@/lib/supabase/client';
 import type { ResearchItem } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
@@ -101,13 +102,14 @@ export default function ResearchForm({
   }
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const picked = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
+    if (!picked) return;
 
     setUploading(true);
     setError('');
 
+    const file = await compressImage(picked);
     const folder = form.keyword.replace(/[\\/:*?"<>|]/g, '-') || 'Uncategorized';
     const path = `research/${folder}/${Date.now()}_${file.name}`;
 

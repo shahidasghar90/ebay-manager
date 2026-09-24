@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { compressImage } from '@/lib/compressImage';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
 import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfig';
@@ -249,7 +250,8 @@ export default function ProductForm({
     setUploading(true);
     setError('');
 
-    for (const file of files) {
+    for (const original of files) {
+      const file = await compressImage(original);
       const folder = [form.condition || 'Uncategorized', form.category || 'Uncategorized', form.productName || 'product']
         .map((segment) => segment.replace(/[\\/:*?"<>|]/g, '-'))
         .join('/');
