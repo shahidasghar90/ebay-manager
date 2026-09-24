@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, serviceRoleKey } from '@/lib/supabase/admin';
 
 type NotifyBody = {
   title?: string;
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
 
-  if (!publicKey || !privateKey || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!publicKey || !privateKey || !serviceRoleKey) {
     return NextResponse.json({ error: 'Push notifications are not configured' }, { status: 500 });
   }
 

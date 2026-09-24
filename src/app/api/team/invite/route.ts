@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, serviceRoleKey } from '@/lib/supabase/admin';
 
 function generatePassword() {
   return Array.from({ length: 12 }, () => Math.random().toString(36).slice(2, 3)).join('') + 'A1!';
@@ -8,7 +8,7 @@ function generatePassword() {
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!serviceRoleKey) {
       return NextResponse.json(
         { error: 'SUPABASE_SERVICE_ROLE_KEY is not set on the server (.env.local). Restart the dev server after adding it.' },
         { status: 500 }
