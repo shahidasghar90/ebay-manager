@@ -35,7 +35,7 @@ body {
 }
 
 .field-label {
-  @apply grid gap-1.5 text-[13px] font-bold text-slate-700;
+  @apply grid content-start gap-1.5 text-[13px] font-bold text-slate-700;
 }
 
 .field-input {
