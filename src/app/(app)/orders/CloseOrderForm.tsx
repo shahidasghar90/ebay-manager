@@ -8,6 +8,10 @@ import { expectedPayout } from '@/lib/orderPricing';
 import type { Order } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 
+function round2(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 function num(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -17,9 +21,14 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [feeVat, setFeeVat] = useState('0');
+  // eBay adds 19% VAT to each fee line and rounds per line (e.g. 1.09 → 0.21,
+  // 0.35 → 0.07 = 0.28), so the suggestion matches the eBay breakdown.
+  const suggestedFeeVat =
+    Math.round((round2(Number(order.ebay_fee_eur || 0) * 0.19) + round2(Number(order.payment_fee_eur || 0) * 0.19)) * 100) /
+    100;
+  const [feeVat, setFeeVat] = useState(String(suggestedFeeVat));
   const expected = expectedPayout(order, num(feeVat));
-  const [actual, setActual] = useState(String(expectedPayout(order)));
+  const [actual, setActual] = useState(String(expectedPayout(order, suggestedFeeVat)));
   const [payoutDate, setPayoutDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -27,7 +36,6 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const adjustment = Math.round((num(actual) - expected) * 100) / 100;
   const fees = Number(order.ebay_fee_eur || 0) + Number(order.payment_fee_eur || 0);
   const shipping = Number(order.shipping_packaging_cost_eur || 0);
-  const suggestedFeeVat = Math.round(fees * 0.19 * 100) / 100;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -86,7 +94,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               onChange={(e) => setActual(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              What eBay actually paid out for this order.
+              eBay &quot;Sales proceeds less costs&quot;.
             </small>
           </label>
 
@@ -101,7 +109,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               onChange={(e) => setFeeVat(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              From the eBay payout report.{' '}
+              eBay &quot;VAT (19%)&quot; line.{' '}
               <button
                 type="button"
                 className="text-blue font-bold underline"
