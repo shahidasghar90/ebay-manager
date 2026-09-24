@@ -93,7 +93,7 @@ export default function AccountsTable({
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[720px]">
+          <table className="responsive-table w-full text-sm md:min-w-[720px]">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Date</th>
@@ -109,27 +109,27 @@ export default function AccountsTable({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={vatRegistered ? 8 : 7} className="text-center text-muted p-5">
+                  <td colSpan={vatRegistered ? 8 : 7} className="cell-empty text-center text-muted p-5">
                     No transactions found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((tx) => (
                   <tr key={tx.tx_id} className="border-b border-border">
-                    <td className="p-3">{formatDate(tx.tx_date)}</td>
-                    <td className="p-3">{tx.type}</td>
-                    <td className="p-3">{tx.category}</td>
-                    <td className={`p-3 ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
+                    <td className="p-3" data-label="Date">{formatDate(tx.tx_date)}</td>
+                    <td className="p-3 font-semibold" data-label="Type">{tx.type}</td>
+                    <td className="p-3" data-label="Category">{tx.category}</td>
+                    <td data-label="Amount" className={`p-3 ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
                       {formatMoney(tx.amount_eur)}
                     </td>
                     {vatRegistered && (
-                      <td className="p-3">
+                      <td className="p-3" data-label="VAT">
                         {tx.vat_amount_eur != null ? formatMoney(tx.vat_amount_eur) : '—'}
                       </td>
                     )}
-                    <td className="p-3">{tx.direction}</td>
-                    <td className="p-3">{tx.notes || '—'}</td>
-                    <td className="p-3">
+                    <td className="p-3" data-label="Direction">{tx.direction}</td>
+                    <td className="p-3" data-label="Notes">{tx.notes || '—'}</td>
+                    <td className="p-3 cell-actions">
                       <Link
                         href={`/accounts/${tx.tx_id}/edit`}
                         className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"

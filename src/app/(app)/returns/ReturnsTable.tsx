@@ -12,7 +12,7 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
   return (
     <div className="card overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm min-w-[720px]">
+        <table className="responsive-table w-full text-sm md:min-w-[720px]">
           <thead>
             <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
               <th className="p-3">Case ID</th>
@@ -27,13 +27,13 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
           <tbody>
             {cases.map((item) => (
               <tr key={item.case_id} className="border-b border-border">
-                <td className="p-3">{item.case_id}</td>
-                <td className="p-3">{item.order_id || '—'}</td>
-                <td className="p-3">{formatDate(item.case_date)}</td>
-                <td className="p-3">{item.reason}</td>
-                <td className="p-3">{formatMoney(item.refund_eur)}</td>
-                <td className="p-3">{formatMoney(item.net_loss_eur)}</td>
-                <td className="p-3">
+                <td className="p-3 font-semibold" data-label="Case ID">{item.case_id}</td>
+                <td className="p-3" data-label="Order ID">{item.order_id || '—'}</td>
+                <td className="p-3" data-label="Date">{formatDate(item.case_date)}</td>
+                <td className="p-3" data-label="Reason">{item.reason}</td>
+                <td className="p-3" data-label="Refund">{formatMoney(item.refund_eur)}</td>
+                <td className="p-3" data-label="Net Loss">{formatMoney(item.net_loss_eur)}</td>
+                <td className="p-3" data-label="Status">
                   <span className={statusClassName(item.status)}>{item.status}</span>
                 </td>
               </tr>

@@ -52,8 +52,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         className={`
-          fixed md:static top-0 left-0 bottom-0 z-[300] w-[250px]
-          bg-navy text-white flex flex-col p-6
+          fixed md:sticky top-0 left-0 bottom-0 z-[300] w-[250px] max-w-[85vw] shrink-0
+          h-[100dvh] md:h-screen overflow-y-auto
+          bg-navy text-white flex flex-col p-6 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-6
           transition-transform duration-200 ease-out shadow-2xl md:shadow-none
           ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}

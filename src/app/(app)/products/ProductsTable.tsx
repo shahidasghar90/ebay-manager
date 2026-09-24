@@ -97,7 +97,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[720px]">
+          <table className="responsive-table w-full text-sm md:min-w-[720px]">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Image</th>
@@ -115,14 +115,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center text-muted p-5">
+                  <td colSpan={10} className="cell-empty text-center text-muted p-5">
                     No products found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((product) => (
                   <tr key={product.sku} className="border-b border-border">
-                    <td className="p-3">
+                    <td className="p-3 cell-image">
                       {product.image_urls?.[0] && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -132,19 +132,19 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                         />
                       )}
                     </td>
-                    <td className="p-3">{product.sku}</td>
-                    <td className="p-3">{product.product_name}</td>
-                    <td className="p-3">{product.condition}</td>
-                    <td className="p-3">{product.business_model}</td>
-                    <td className="p-3">{formatMoney(product.total_cost_eur)}</td>
-                    <td className="p-3">{formatMoney(product.current_sale_price_eur)}</td>
-                    <td className="p-3">{formatMoney(product.estimated_net_profit_eur)}</td>
-                    <td className="p-3">
+                    <td className="p-3" data-label="SKU">{product.sku}</td>
+                    <td className="p-3 font-semibold" data-label="Product">{product.product_name}</td>
+                    <td className="p-3" data-label="Condition">{product.condition}</td>
+                    <td className="p-3" data-label="Model">{product.business_model}</td>
+                    <td className="p-3" data-label="Cost EUR">{formatMoney(product.total_cost_eur)}</td>
+                    <td className="p-3" data-label="Sale Price">{formatMoney(product.current_sale_price_eur)}</td>
+                    <td className="p-3" data-label="Profit">{formatMoney(product.estimated_net_profit_eur)}</td>
+                    <td className="p-3" data-label="Status">
                       <span className={statusClassName(product.product_status)}>
                         {product.product_status}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 cell-actions">
                       <div className="flex gap-1.5">
                         <Link
                           href={`/products/${product.sku}`}

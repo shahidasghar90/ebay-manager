@@ -47,7 +47,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[760px]">
+          <table className="responsive-table w-full text-sm md:min-w-[760px]">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Order ID</th>
@@ -64,26 +64,26 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center text-muted p-5">
+                  <td colSpan={9} className="cell-empty text-center text-muted p-5">
                     No orders found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((order) => (
                   <tr key={order.order_id} className="border-b border-border">
-                    <td className="p-3">{order.order_id}</td>
-                    <td className="p-3">{formatDate(order.order_date)}</td>
-                    <td className="p-3">{order.sku}</td>
-                    <td className="p-3">{order.buyer_username || '—'}</td>
-                    <td className="p-3">{order.quantity}</td>
-                    <td className="p-3">{formatMoney(order.gross_sale_eur)}</td>
-                    <td className="p-3">{formatMoney(order.net_profit_eur)}</td>
-                    <td className="p-3">
+                    <td className="p-3 font-semibold" data-label="Order ID">{order.order_id}</td>
+                    <td className="p-3" data-label="Date">{formatDate(order.order_date)}</td>
+                    <td className="p-3" data-label="SKU">{order.sku}</td>
+                    <td className="p-3" data-label="Buyer">{order.buyer_username || '—'}</td>
+                    <td className="p-3" data-label="Qty">{order.quantity}</td>
+                    <td className="p-3" data-label="Sale">{formatMoney(order.gross_sale_eur)}</td>
+                    <td className="p-3" data-label="Profit">{formatMoney(order.net_profit_eur)}</td>
+                    <td className="p-3" data-label="Status">
                       <span className={statusClassName(order.order_status)}>
                         {order.order_status}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 cell-actions">
                       <div className="flex gap-1.5">
                         <Link
                           href={`/orders/${order.order_id}`}

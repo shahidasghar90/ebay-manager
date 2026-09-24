@@ -180,7 +180,7 @@ export default async function DashboardPage() {
             <div className="text-muted text-center py-4">No orders yet.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="responsive-table w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                     <th className="p-3">Order ID</th>
@@ -193,11 +193,11 @@ export default async function DashboardPage() {
                 <tbody>
                   {(recentOrders as Order[]).map((order) => (
                     <tr key={order.order_id} className="border-b border-border">
-                      <td className="p-3">{order.order_id}</td>
-                      <td className="p-3">{order.sku}</td>
-                      <td className="p-3">{formatMoney(order.gross_sale_eur)}</td>
-                      <td className="p-3">{formatMoney(order.net_profit_eur)}</td>
-                      <td className="p-3">
+                      <td className="p-3 font-semibold" data-label="Order ID">{order.order_id}</td>
+                      <td className="p-3" data-label="SKU">{order.sku}</td>
+                      <td className="p-3" data-label="Sale">{formatMoney(order.gross_sale_eur)}</td>
+                      <td className="p-3" data-label="Profit">{formatMoney(order.net_profit_eur)}</td>
+                      <td className="p-3" data-label="Status">
                         <span className={statusClassName(order.order_status)}>
                           {order.order_status}
                         </span>

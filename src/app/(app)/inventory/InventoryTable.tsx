@@ -42,7 +42,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[720px]">
+          <table className="responsive-table w-full text-sm md:min-w-[720px]">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">SKU</th>
@@ -58,7 +58,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center text-muted p-5">
+                  <td colSpan={8} className="cell-empty text-center text-muted p-5">
                     No inventory records found.
                   </td>
                 </tr>
@@ -72,16 +72,16 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
 
                   return (
                     <tr key={item.id} className="border-b border-border">
-                      <td className="p-3">{item.sku}</td>
-                      <td className="p-3">{item.product_name}</td>
-                      <td className="p-3">{item.inventory_type}</td>
-                      <td className="p-3">{item.quantity_on_hand}</td>
-                      <td className="p-3">{item.quantity_reserved}</td>
-                      <td className="p-3">{available}</td>
-                      <td className="p-3">
+                      <td className="p-3" data-label="SKU">{item.sku}</td>
+                      <td className="p-3 font-semibold" data-label="Product">{item.product_name}</td>
+                      <td className="p-3" data-label="Type">{item.inventory_type}</td>
+                      <td className="p-3" data-label="On Hand">{item.quantity_on_hand}</td>
+                      <td className="p-3" data-label="Reserved">{item.quantity_reserved}</td>
+                      <td className="p-3" data-label="Available">{available}</td>
+                      <td className="p-3" data-label="Alert">
                         <span className={alert.className}>{alert.label}</span>
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 cell-actions">
                         <Link
                           href={`/inventory/${item.id}/edit`}
                           className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"

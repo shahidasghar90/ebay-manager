@@ -39,7 +39,7 @@ body {
 }
 
 .field-input {
-  @apply w-full rounded-md border border-slate-300 px-2.5 py-2 text-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-blue;
+  @apply w-full min-w-0 rounded-md border border-slate-300 px-2.5 py-2 text-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-blue;
 }
 
 .btn-primary {
@@ -48,4 +48,64 @@ body {
 
 .btn-secondary {
   @apply rounded-lg bg-white border border-border px-3.5 py-2.5 font-bold text-text hover:border-blue hover:text-blue transition-colors;
+}
+
+/*
+ * Tables that collapse into stacked cards on phones. Each <td> carries a
+ * data-label which is shown as the row heading once the <thead> is hidden.
+ */
+@media (max-width: 767px) {
+  .responsive-table thead {
+    display: none;
+  }
+
+  .responsive-table,
+  .responsive-table tbody,
+  .responsive-table tr,
+  .responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .responsive-table tr {
+    padding: 12px 14px;
+  }
+
+  .responsive-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .responsive-table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .responsive-table td.cell-actions {
+    justify-content: flex-start;
+    padding-top: 10px;
+  }
+
+  .responsive-table td.cell-actions > div {
+    flex-wrap: wrap;
+  }
+
+  .responsive-table td.cell-image:empty {
+    display: none;
+  }
+
+  .responsive-table td.cell-empty {
+    justify-content: center;
+    text-align: center;
+  }
 }

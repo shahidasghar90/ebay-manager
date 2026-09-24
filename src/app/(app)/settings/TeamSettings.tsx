@@ -107,7 +107,7 @@ export default function TeamSettings() {
       </div>
 
       {canInvite && (
-        <form onSubmit={handleInvite} className="flex gap-2">
+        <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-2">
           <input
             className="field-input"
             type="email"
@@ -117,7 +117,7 @@ export default function TeamSettings() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <select
-            className="field-input max-w-[140px]"
+            className="field-input sm:max-w-[140px]"
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as 'owner' | 'member' | 'viewer')}
             disabled={!isOwner}
@@ -167,7 +167,7 @@ export default function TeamSettings() {
               const isSelf = member.email.toLowerCase() === myEmail.toLowerCase();
               return (
                 <li key={member.email} className="flex items-center justify-between text-sm gap-2">
-                  <span>
+                  <span className="min-w-0 break-all">
                     {member.email}
                     {isSelf && <span className="text-muted"> (you)</span>}
                   </span>
