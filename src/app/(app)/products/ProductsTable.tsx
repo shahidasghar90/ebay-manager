@@ -10,12 +10,21 @@ import type { FulfillmentModel, Product } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 import { RecordAuthorCell } from '@/components/RecordAuthor';
 
+// "All" deliberately leaves out Archived: archived products only live in their own tab.
+const STATUS_TABS = ['All', 'Active', 'Research', 'Paused', 'Out of Stock', 'Archived'] as const;
+type StatusTab = (typeof STATUS_TABS)[number];
+
+function inTab(product: Product, tab: StatusTab) {
+  if (tab === 'All') return product.product_status !== 'Archived';
+  return product.product_status === tab;
+}
+
 export default function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
   const supabase = createClient();
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusTab, setStatusTab] = useState<StatusTab>('All');
   const [conditionFilter, setConditionFilter] = useState('');
   const [modelFilter, setModelFilter] = useState('');
   const [fulfillmentModels, setFulfillmentModels] = useState<FulfillmentModel[]>([]);
@@ -25,12 +34,11 @@ export default function ProductsTable({ products }: { products: Product[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filtered = useMemo(() => {
+  // Search, condition and model narrow every tab; the tab then picks the status.
+  const searched = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return products.filter((product) => {
-      if (!statusFilter && product.product_status === 'Archived') return false;
-      if (statusFilter && product.product_status !== statusFilter) return false;
       if (conditionFilter && product.condition !== conditionFilter) return false;
       if (modelFilter && product.business_model !== modelFilter) return false;
 
@@ -41,14 +49,31 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         .toLowerCase()
         .includes(query);
     });
-  }, [products, search, statusFilter, conditionFilter, modelFilter]);
+  }, [products, search, conditionFilter, modelFilter]);
 
-  async function archiveProduct(sku: string) {
-    if (!confirm(`Archive product ${sku}? It will be hidden from the active list.`)) return;
+  const tabCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        STATUS_TABS.map((tab) => [tab, searched.filter((product) => inTab(product, tab)).length])
+      ) as Record<StatusTab, number>,
+    [searched]
+  );
+
+  const filtered = useMemo(
+    () => searched.filter((product) => inTab(product, statusTab)),
+    [searched, statusTab]
+  );
+
+  async function setProductStatus(sku: string, status: 'Archived' | 'Active') {
+    const archiving = status === 'Archived';
+    const question = archiving
+      ? `Archive product ${sku}? It will move to the Archived tab.`
+      : `Restore product ${sku}? It will move back to the Active tab.`;
+    if (!confirm(question)) return;
 
     const { error } = await supabase
       .from('products')
-      .update({ product_status: 'Archived' })
+      .update({ product_status: status })
       .eq('sku', sku);
 
     if (error) {
@@ -56,13 +81,13 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       return;
     }
 
-    notifyTeam('Product archived', sku, '/products');
+    notifyTeam(archiving ? 'Product archived' : 'Product restored', sku, '/products');
     router.refresh();
   }
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-3 sm:mb-4">
         <input
           className="field-input sm:max-w-[420px]"
           placeholder="Search SKU, product name, supplier..."
@@ -71,24 +96,47 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2.5 mb-4">
-        <select className="field-input w-auto min-w-[150px]" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">All Status</option>
-          <option value="Research">Research</option>
-          <option value="Active">Active</option>
-          <option value="Paused">Paused</option>
-          <option value="Out of Stock">Out of Stock</option>
-          <option value="Archived">Archived</option>
-        </select>
+      <div
+        role="tablist"
+        className="no-scrollbar flex gap-2 mb-3 overflow-x-auto overflow-y-hidden sm:flex-wrap sm:mb-4"
+      >
+        {STATUS_TABS.map((tab) => {
+          const active = tab === statusTab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setStatusTab(tab)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-[13px] sm:px-3.5 sm:py-1.5 sm:text-sm font-bold transition-colors ${
+                active
+                  ? 'bg-blue border-blue text-white'
+                  : 'bg-white border-border text-muted hover:border-blue hover:text-blue'
+              }`}
+            >
+              {tab}
+              <span
+                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] ${
+                  active ? 'bg-white/20' : 'bg-slate-100'
+                }`}
+              >
+                {tabCounts[tab]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-        <select className="field-input w-auto min-w-[150px]" value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+      <div className="grid grid-cols-2 gap-2 mb-3 sm:flex sm:flex-wrap sm:gap-2.5 sm:mb-4">
+        <select className="field-input sm:w-auto sm:min-w-[150px]" value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
           <option value="">All Conditions</option>
           <option value="New">New</option>
           <option value="Used">Used</option>
           <option value="Refurbished">Refurbished</option>
         </select>
 
-        <select className="field-input w-auto min-w-[150px]" value={modelFilter} onChange={(e) => setModelFilter(e.target.value)}>
+        <select className="field-input sm:w-auto sm:min-w-[150px]" value={modelFilter} onChange={(e) => setModelFilter(e.target.value)}>
           <option value="">All Models</option>
           {fulfillmentModels.map((model) => (
             <option key={model.code} value={model.code}>
@@ -120,7 +168,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="cell-empty text-center text-muted p-5">
-                    No products found.
+                    {statusTab === 'All' ? 'No products found.' : `No ${statusTab.toLowerCase()} products.`}
                   </td>
                 </tr>
               ) : (
@@ -165,10 +213,17 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                         >
                           Edit
                         </Link>
-                        {product.product_status !== 'Archived' && (
+                        {product.product_status === 'Archived' ? (
+                          <button
+                            className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-green hover:text-green"
+                            onClick={() => setProductStatus(product.sku, 'Active')}
+                          >
+                            Restore
+                          </button>
+                        ) : (
                           <button
                             className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-red hover:text-red"
-                            onClick={() => archiveProduct(product.sku)}
+                            onClick={() => setProductStatus(product.sku, 'Archived')}
                           >
                             Archive
                           </button>

@@ -43,11 +43,20 @@ body {
 }
 
 .btn-primary {
-  @apply rounded-lg bg-blue px-3.5 py-2.5 font-bold text-white hover:bg-blue-dark transition-colors;
+  @apply rounded-lg bg-blue px-3 py-2 text-sm md:px-3.5 md:py-2.5 md:text-base font-bold text-white hover:bg-blue-dark transition-colors;
 }
 
 .btn-secondary {
-  @apply rounded-lg bg-white border border-border px-3.5 py-2.5 font-bold text-text hover:border-blue hover:text-blue transition-colors;
+  @apply rounded-lg bg-white border border-border px-3 py-2 text-sm md:px-3.5 md:py-2.5 md:text-base font-bold text-text hover:border-blue hover:text-blue transition-colors;
+}
+
+/* Horizontal strip that scrolls by swipe without showing a scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /*

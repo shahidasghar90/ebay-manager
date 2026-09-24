@@ -24,7 +24,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <span className="font-bold">TradePilot</span>
         </header>
 
-        <main className="flex-1 min-w-0 p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <main className="flex-1 min-w-0 overflow-x-clip p-4 md:p-7 pb-[calc(env(safe-area-inset-bottom)+16px)]">
           <NotificationBanner />
           {children}
         </main>
