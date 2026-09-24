@@ -34,7 +34,12 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
                   Loss <strong className="text-red">{formatMoney(item.net_loss_eur)}</strong>
                 </span>
               </p>
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-2">
               <RecordAuthorShort record={item} />
+              <Link href={`/returns/${item.case_id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
+                Edit
+              </Link>
             </div>
           </li>
         ))}
@@ -53,6 +58,7 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
                 <th className="p-3">Net Loss</th>
                 <th className="p-3">Last Edited</th>
                 <th className="p-3">Status</th>
+                <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -71,6 +77,14 @@ export default function ReturnsTable({ cases }: { cases: ReturnCase[] }) {
                   </td>
                   <td className="p-3" data-label="Status">
                     <span className={statusClassName(item.status)}>{item.status}</span>
+                  </td>
+                  <td className="p-3 cell-actions">
+                    <Link
+                      href={`/returns/${item.case_id}/edit`}
+                      className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

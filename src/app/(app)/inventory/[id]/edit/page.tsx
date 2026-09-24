@@ -3,6 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { InventoryItem, Product } from '@/lib/types';
 import InventoryForm from '../../InventoryForm';
+import StockHistory from '../../StockHistory';
 import { RecordAuthorLine } from '@/components/RecordAuthor';
 
 export default async function EditInventoryItemPage({
@@ -24,7 +25,10 @@ export default async function EditInventoryItemPage({
     <div>
       <PageHeader title={`Edit Inventory — ${item.sku}`} subtitle={item.product_name} />
       <RecordAuthorLine record={(item as InventoryItem)} />
-      <InventoryForm item={item as InventoryItem} products={(products as Product[]) || []} />
+      <div className="grid gap-6">
+        <InventoryForm item={item as InventoryItem} products={(products as Product[]) || []} />
+        <StockHistory sku={item.sku} />
+      </div>
     </div>
   );
 }

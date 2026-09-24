@@ -71,7 +71,6 @@ export default function InventoryForm({
       variant: form.variant || null,
       inventory_type: form.inventoryType,
       location_bin: form.locationBin || null,
-      quantity_on_hand: num(form.quantityOnHand),
       quantity_reserved: num(form.quantityReserved),
       reorder_level: num(form.reorderLevel),
       supplier_name: product?.supplier_name || null,
@@ -93,6 +92,24 @@ export default function InventoryForm({
       }
       setSaving(false);
       return;
+    }
+
+    // Stock changes go through the movement log so every change has a reason.
+    const quantityDelta = num(form.quantityOnHand) - (item?.quantity_on_hand ?? 0);
+
+    if (quantityDelta !== 0) {
+      const { error: stockError } = await supabase.rpc('apply_stock_movement', {
+        p_sku: payload.sku,
+        p_qty_change: quantityDelta,
+        p_reason: isEditing ? 'adjust' : 'opening',
+        p_notes: isEditing ? 'Manual count correction' : 'Opening stock'
+      });
+
+      if (stockError) {
+        setError(stockError.message);
+        setSaving(false);
+        return;
+      }
     }
 
     notifyTeam(
@@ -166,6 +183,11 @@ export default function InventoryForm({
             value={form.quantityOnHand}
             onChange={(e) => setField('quantityOnHand', e.target.value)}
           />
+          <small className="text-muted font-normal text-[11px] -mt-0.5">
+            {isEditing
+              ? 'Only to correct a count. Use + Stock for new purchases.'
+              : 'Only On Hand items track stock.'}
+          </small>
         </label>
 
         <label className="field-label">

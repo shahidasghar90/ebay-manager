@@ -86,6 +86,10 @@ export type Order = RecordAuthor & {
   carrier: string | null;
   buyer_tracking_number: string | null;
   delivered_date: string | null;
+  actual_payout_eur: number | null;
+  payout_date: string | null;
+  adjustment_eur: number;
+  closed_at: string | null;
   notes: string | null;
   created_at: string;
 };
@@ -117,6 +121,21 @@ export type AccountTx = RecordAuthor & {
   vat_rate_percent: number | null;
   vat_amount_eur: number | null;
   notes: string | null;
+  ref_type: string | null;
+  ref_id: string | null;
+};
+
+export type StockMovement = {
+  id: string;
+  sku: string;
+  qty_change: number;
+  reason: 'opening' | 'purchase' | 'sale' | 'cancel' | 'return' | 'adjust';
+  ref_type: string | null;
+  ref_id: string | null;
+  unit_cost_eur: number | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
 };
 
 export type ReturnCase = RecordAuthor & {
@@ -127,6 +146,11 @@ export type ReturnCase = RecordAuthor & {
   status: 'Open' | 'Resolved' | 'Rejected';
   refund_eur: number;
   net_loss_eur: number;
+  additional_loss_eur: number;
+  fee_credit_eur: number;
+  restock: boolean;
+  settled_at: string | null;
+  profit_impact_eur: number;
   notes: string | null;
 };
 

@@ -7,7 +7,7 @@ import { fetchSettings } from '@/lib/settings';
 import { fetchSalesPlatforms, fetchFulfillmentModels } from '@/lib/platformConfig';
 import { calculateOrderPricing } from '@/lib/orderPricing';
 import { formatMoney } from '@/lib/format';
-import type { Order, Product, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
+import type { InventoryItem, Order, Product, Settings, SalesPlatform, FulfillmentModel } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 
 type FormState = {
@@ -57,7 +57,15 @@ function num(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export default function OrderForm({ products, order }: { products: Product[]; order?: Order }) {
+export default function OrderForm({
+  products,
+  inventory = [],
+  order
+}: {
+  products: Product[];
+  inventory?: InventoryItem[];
+  order?: Order;
+}) {
   const isEditing = !!order;
   const router = useRouter();
   const supabase = createClient();
@@ -91,6 +99,14 @@ export default function OrderForm({ products, order }: { products: Product[]; or
     () => products.find((product) => product.sku === form.sku),
     [products, form.sku]
   );
+
+  // On Hand stock left for this SKU once this order's (extra) quantity is taken.
+  const stockAfter = useMemo(() => {
+    const row = inventory.find((item) => item.sku === form.sku);
+    if (!row || row.inventory_type !== 'On Hand') return null;
+    const alreadyTaken = order && order.sku === form.sku ? order.quantity : 0;
+    return row.quantity_on_hand - ((num(form.quantity) || 1) - alreadyTaken);
+  }, [inventory, form.sku, form.quantity, order]);
 
   const pricing = useMemo(
     () =>
@@ -127,10 +143,6 @@ export default function OrderForm({ products, order }: { products: Product[]; or
 
     const orderId = order?.order_id || `EB-${Date.now().toString(36).toUpperCase()}`;
     const quantity = num(form.quantity) || 1;
-
-    const vatAmountEur = settings.vatRegistered
-      ? Math.round((pricing.grossSaleEur * settings.vatRatePercent / 100 + Number.EPSILON) * 100) / 100
-      : null;
 
     const payload = {
       order_id: orderId,
@@ -177,41 +189,18 @@ export default function OrderForm({ products, order }: { products: Product[]; or
     const previousQuantity = isEditing ? order!.quantity : 0;
     const quantityDelta = quantity - previousQuantity;
 
+    // Money reaches Accounts only when the order is closed (see close_order).
     if (quantityDelta !== 0) {
-      const { data: inventoryRow } = await supabase
-        .from('inventory')
-        .select('id, quantity_on_hand')
-        .eq('sku', form.sku)
-        .maybeSingle();
-
-      if (inventoryRow) {
-        const { error: inventoryError } = await supabase
-          .from('inventory')
-          .update({ quantity_on_hand: inventoryRow.quantity_on_hand - quantityDelta })
-          .eq('id', inventoryRow.id);
-
-        if (inventoryError) {
-          console.error('Failed to adjust inventory:', inventoryError.message);
-        }
-      } else {
-        console.warn(`No inventory row for SKU ${form.sku} — skipping stock deduction.`);
-      }
-    }
-
-    if (!isEditing) {
-      const { error: accountError } = await supabase.from('accounts').insert({
-        tx_id: `ACC-${Date.now().toString(36).toUpperCase()}`,
-        type: 'Sale',
-        category: 'eBay Sales',
-        amount_eur: pricing.grossSaleEur,
-        direction: 'In',
-        vat_rate_percent: settings.vatRegistered ? settings.vatRatePercent : null,
-        vat_amount_eur: vatAmountEur,
-        notes: `Auto: order ${orderId} (${form.sku})`
+      const { error: stockError } = await supabase.rpc('apply_stock_movement', {
+        p_sku: form.sku,
+        p_qty_change: -quantityDelta,
+        p_reason: 'sale',
+        p_ref_type: 'order',
+        p_ref_id: orderId
       });
 
-      if (accountError) {
-        console.error('Failed to auto-create accounts entry:', accountError.message);
+      if (stockError) {
+        console.error('Failed to adjust inventory:', stockError.message);
       }
     }
 
@@ -299,6 +288,11 @@ export default function OrderForm({ products, order }: { products: Product[]; or
             value={form.quantity}
             onChange={(e) => setField('quantity', e.target.value)}
           />
+          {stockAfter !== null && stockAfter < 0 && (
+            <small className="text-red font-normal text-[11px] -mt-0.5">
+              Not enough stock: {stockAfter + (num(form.quantity) || 1)} on hand.
+            </small>
+          )}
         </label>
       </FormSection>
 
@@ -406,8 +400,10 @@ export default function OrderForm({ products, order }: { products: Product[]; or
             <option value="New">New</option>
             <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
           </select>
+          <small className="text-muted font-normal text-[11px] -mt-0.5">
+            Close or cancel the order from its detail page.
+          </small>
         </label>
 
         <label className="field-label">

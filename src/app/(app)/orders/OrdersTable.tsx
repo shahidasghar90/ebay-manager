@@ -42,6 +42,8 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
           <option value="New">New</option>
           <option value="Shipped">Shipped</option>
           <option value="Delivered">Delivered</option>
+          <option value="Closed">Closed</option>
+          <option value="Returned">Returned</option>
           <option value="Cancelled">Cancelled</option>
         </select>
       </div>

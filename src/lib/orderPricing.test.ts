@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateOrderPricing } from './orderPricing';
+import { calculateOrderPricing, expectedPayout } from './orderPricing';
 
 describe('calculateOrderPricing', () => {
   it('computes gross sale, fees, and net profit for a simple EUR order', () => {
@@ -50,5 +50,11 @@ describe('calculateOrderPricing', () => {
     });
 
     expect(result.netMargin).toBe(0);
+  });
+});
+
+describe('expectedPayout', () => {
+  it('subtracts selling and payment fees from the gross sale', () => {
+    expect(expectedPayout({ gross_sale_eur: 100, ebay_fee_eur: 12.9, payment_fee_eur: 3.25 })).toBe(83.85);
   });
 });

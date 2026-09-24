@@ -27,6 +27,11 @@ body {
   @apply bg-[#fef3c7] text-[#92400e];
 }
 
+.status-closed {
+  @apply bg-[#dbeafe] text-[#1e40af];
+}
+
+.status-returned,
 .status-paused,
 .status-cancelled,
 .status-rejected,

@@ -3,8 +3,10 @@ import { notFound } from 'next/navigation';
 import PageHeader from '@/components/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { formatDate, formatMoney, statusClassName } from '@/lib/format';
-import type { Order } from '@/lib/types';
+import { expectedPayout } from '@/lib/orderPricing';
+import type { AccountTx, Order } from '@/lib/types';
 import { RecordAuthorLine } from '@/components/RecordAuthor';
+import OrderActions from '../OrderActions';
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -33,27 +35,28 @@ export default async function OrderDetailPage({
 }) {
   const { orderId } = await params;
   const supabase = await createClient();
-  const { data } = await supabase.from('orders').select('*').eq('order_id', orderId).maybeSingle();
+  const [{ data }, { data: entries }] = await Promise.all([
+    supabase.from('orders').select('*').eq('order_id', orderId).maybeSingle(),
+    supabase
+      .from('accounts')
+      .select('*')
+      .eq('ref_type', 'order')
+      .eq('ref_id', orderId)
+      .order('created_at', { ascending: true })
+  ]);
 
   if (!data) notFound();
 
   const order = data as Order;
+  const ledger = (entries as AccountTx[]) || [];
+  const adjustment = Number(order.adjustment_eur || 0);
 
   return (
     <div>
       <PageHeader
         title={order.order_id}
         subtitle={order.product_name || order.sku || ''}
-        actions={
-          <>
-            <Link href={`/orders/${order.order_id}/edit`} className="btn-secondary">
-              Edit
-            </Link>
-            <Link href="/orders" className="btn-secondary">
-              Back to Orders
-            </Link>
-          </>
-        }
+        actions={<OrderActions order={order} />}
       />
       <RecordAuthorLine record={order} />
 
@@ -81,6 +84,48 @@ export default async function OrderDetailPage({
           <Field label="Net Profit" value={formatMoney(order.net_profit_eur)} />
           <Field label="Net Margin" value={`${(Number(order.net_margin || 0) * 100).toFixed(1)}%`} />
         </Section>
+
+        <Section title="Payout">
+          <Field label="Expected Payout" value={formatMoney(expectedPayout(order))} />
+          <Field
+            label="Received"
+            value={order.actual_payout_eur != null ? formatMoney(order.actual_payout_eur) : 'Not closed yet'}
+          />
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] uppercase text-muted font-bold">Adjustment</span>
+            <strong className={`text-sm ${adjustment < 0 ? 'text-red' : adjustment > 0 ? 'text-green' : ''}`}>
+              {order.closed_at ? formatMoney(adjustment) : '—'}
+            </strong>
+          </div>
+          <Field label="Payout Date" value={formatDate(order.payout_date)} />
+        </Section>
+
+        {ledger.length > 0 && (
+          <div>
+            <h4 className="text-xs uppercase tracking-wide text-blue font-bold border-b border-border pb-1.5 mb-2.5">
+              Accounts Entries
+            </h4>
+            <ul className="grid gap-0 m-0 p-0 list-none text-sm">
+              {ledger.map((tx) => (
+                <li
+                  key={tx.tx_id}
+                  className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-b-0"
+                >
+                  <span className="min-w-0">
+                    <strong className="block">{tx.type}</strong>
+                    <span className="block text-xs text-muted truncate">
+                      {formatDate(tx.tx_date)} · {tx.category}
+                    </span>
+                  </span>
+                  <strong className={`shrink-0 ${tx.direction === 'In' ? 'text-green' : 'text-red'}`}>
+                    {tx.direction === 'In' ? '+' : '−'}
+                    {formatMoney(tx.amount_eur)}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <Section title="Fulfillment">
           <Field label="Fulfillment Type" value={order.fulfillment_type} />

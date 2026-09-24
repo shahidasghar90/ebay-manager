@@ -75,9 +75,16 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <RecordAuthorShort record={item} />
-                  <Link href={`/inventory/${item.id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
-                    Edit
-                  </Link>
+                  <div className="flex gap-1.5 shrink-0">
+                    {item.inventory_type === 'On Hand' && (
+                      <Link href={`/inventory/${item.id}/restock`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                        + Stock
+                      </Link>
+                    )}
+                    <Link href={`/inventory/${item.id}/edit`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                      Edit
+                    </Link>
+                  </div>
                 </div>
               </li>
             );
@@ -136,12 +143,22 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                         <span className={alert.className}>{alert.label}</span>
                       </td>
                       <td className="p-3 cell-actions">
-                        <Link
-                          href={`/inventory/${item.id}/edit`}
-                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                        >
-                          Edit
-                        </Link>
+                        <div className="flex gap-1.5">
+                          {item.inventory_type === 'On Hand' && (
+                            <Link
+                              href={`/inventory/${item.id}/restock`}
+                              className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                            >
+                              + Stock
+                            </Link>
+                          )}
+                          <Link
+                            href={`/inventory/${item.id}/edit`}
+                            className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                          >
+                            Edit
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

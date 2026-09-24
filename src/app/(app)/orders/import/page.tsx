@@ -62,10 +62,6 @@ export default function ImportOrdersPage() {
       });
 
       const orderId = `EB-${Date.now().toString(36).toUpperCase()}-${successCount}`;
-      const vatAmountEur = settings.vatRegistered
-        ? Math.round((pricing.grossSaleEur * settings.vatRatePercent / 100 + Number.EPSILON) * 100) / 100
-        : null;
-
       const { error: insertError } = await supabase.from('orders').insert({
         order_id: orderId,
         order_date: row.order_date,
@@ -81,7 +77,8 @@ export default function ImportOrdersPage() {
         shipping_charged_local: row.shipping_charged_local,
         gross_sale_eur: pricing.grossSaleEur,
         fulfillment_type: row.fulfillment_type,
-        order_status: row.order_status,
+        // Closing needs the real payout, so closed rows come in as Delivered.
+        order_status: ['Closed', 'Returned'].includes(row.order_status) ? 'Delivered' : row.order_status,
         ebay_fee_percent: product.ebay_fee_percent,
         ebay_fee_eur: pricing.ebayFeeEur,
         payment_fee_percent: product.payment_fee_percent,
@@ -100,29 +97,16 @@ export default function ImportOrdersPage() {
         continue;
       }
 
-      const { data: inventoryRow } = await supabase
-        .from('inventory')
-        .select('id, quantity_on_hand')
-        .eq('sku', row.sku)
-        .maybeSingle();
-
-      if (inventoryRow) {
-        await supabase
-          .from('inventory')
-          .update({ quantity_on_hand: inventoryRow.quantity_on_hand - row.quantity })
-          .eq('id', inventoryRow.id);
+      // Money reaches Accounts only when the order is closed (see close_order).
+      if (row.order_status !== 'Cancelled') {
+        await supabase.rpc('apply_stock_movement', {
+          p_sku: row.sku,
+          p_qty_change: -row.quantity,
+          p_reason: 'sale',
+          p_ref_type: 'order',
+          p_ref_id: orderId
+        });
       }
-
-      await supabase.from('accounts').insert({
-        tx_id: `ACC-${Date.now().toString(36).toUpperCase()}-${successCount}`,
-        type: 'Sale',
-        category: 'eBay Sales',
-        amount_eur: pricing.grossSaleEur,
-        direction: 'In',
-        vat_rate_percent: settings.vatRegistered ? settings.vatRatePercent : null,
-        vat_amount_eur: vatAmountEur,
-        notes: `Auto: order ${orderId} (${row.sku}) — CSV import`
-      });
 
       successCount++;
     }

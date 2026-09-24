@@ -8,6 +8,7 @@ export default async function NewReturnPage() {
   const { data: orders } = await supabase
     .from('orders')
     .select('*')
+    .neq('order_status', 'Cancelled')
     .order('order_date', { ascending: false });
 
   return (
