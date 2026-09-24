@@ -89,22 +89,29 @@ export default async function OrderDetailPage({
         </Section>
 
         <Section title="Payout">
+          {/* The real money: what eBay actually paid out. */}
+          <div className="col-span-full rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <span className="text-[11px] uppercase text-[#166534] font-bold">Received from eBay</span>
+            {order.actual_payout_eur != null ? (
+              <strong className="text-2xl text-green">{formatMoney(order.actual_payout_eur)}</strong>
+            ) : (
+              <strong className="text-base text-muted">Not closed yet</strong>
+            )}
+            {order.payout_date && (
+              <span className="basis-full text-xs text-muted">Paid out {formatDate(order.payout_date)}</span>
+            )}
+          </div>
           <Field
             label="Expected Payout"
             value={formatMoney(expectedPayout(order, Number(order.fee_vat_eur || 0)))}
           />
           <Field label="VAT on Fees" value={order.closed_at ? formatMoney(order.fee_vat_eur) : '—'} />
-          <Field
-            label="Received"
-            value={order.actual_payout_eur != null ? formatMoney(order.actual_payout_eur) : 'Not closed yet'}
-          />
           <div className="flex flex-col gap-1">
             <span className="text-[11px] uppercase text-muted font-bold">Adjustment</span>
             <strong className={`text-sm ${adjustment < 0 ? 'text-red' : adjustment > 0 ? 'text-green' : ''}`}>
               {order.closed_at ? formatMoney(adjustment) : '—'}
             </strong>
           </div>
-          <Field label="Payout Date" value={formatDate(order.payout_date)} />
         </Section>
 
         {ledgerRow && (
