@@ -87,10 +87,9 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
 
       <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="responsive-table w-full text-sm md:min-w-[720px]">
+          <table className="responsive-table data-table w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
-                <th className="p-3">SKU</th>
                 <th className="p-3">Product</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">On Hand</th>
@@ -104,7 +103,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="cell-empty text-center text-muted p-5">
+                  <td colSpan={8} className="cell-empty text-center text-muted p-5">
                     No inventory records found.
                   </td>
                 </tr>
@@ -118,8 +117,14 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
 
                   return (
                     <tr key={item.id} className="border-b border-border">
-                      <td className="p-3" data-label="SKU">{item.sku}</td>
-                      <td className="p-3 font-semibold" data-label="Product">{item.product_name}</td>
+                      <td className="p-3 cell-wrap w-full" data-label="Product">
+                        <span className="min-w-0">
+                          <span className="font-semibold leading-snug line-clamp-2" title={item.product_name}>
+                            {item.product_name}
+                          </span>
+                          <span className="block text-xs text-muted">{item.sku}</span>
+                        </span>
+                      </td>
                       <td className="p-3" data-label="Type">{item.inventory_type}</td>
                       <td className="p-3" data-label="On Hand">{item.quantity_on_hand}</td>
                       <td className="p-3" data-label="Reserved">{item.quantity_reserved}</td>

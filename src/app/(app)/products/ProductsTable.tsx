@@ -220,11 +220,9 @@ export default function ProductsTable({ products }: { products: Product[] }) {
           {/* Tablet and desktop: full table. */}
           <div className="hidden md:block card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[720px]">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
-                    <th className="p-3">Image</th>
-                    <th className="p-3">SKU</th>
                     <th className="p-3">Product</th>
                     <th className="p-3">Condition</th>
                     <th className="p-3">Model</th>
@@ -239,18 +237,29 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 <tbody>
                   {filtered.map((product) => (
                     <tr key={product.sku} className="border-b border-border">
-                      <td className="p-3">
-                        {product.image_urls?.[0] && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.image_urls[0]}
-                            alt=""
-                            className="w-10 h-10 object-cover rounded"
-                          />
-                        )}
+                      <td className="p-3 cell-wrap w-full">
+                        <Link href={`/products/${product.sku}`} className="flex items-center gap-3 group">
+                          {product.image_urls?.[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.image_urls[0]}
+                              alt=""
+                              className="w-10 h-10 shrink-0 object-cover rounded border border-border"
+                            />
+                          ) : (
+                            <span className="w-10 h-10 shrink-0 rounded bg-slate-100" />
+                          )}
+                          <span className="min-w-0">
+                            <span
+                              className="font-semibold leading-snug line-clamp-2 group-hover:text-blue"
+                              title={product.product_name}
+                            >
+                              {product.product_name}
+                            </span>
+                            <span className="block text-xs text-muted">{product.sku}</span>
+                          </span>
+                        </Link>
                       </td>
-                      <td className="p-3">{product.sku}</td>
-                      <td className="p-3 font-semibold">{product.product_name}</td>
                       <td className="p-3">{product.condition}</td>
                       <td className="p-3">{product.business_model}</td>
                       <td className="p-3">{formatMoney(product.total_cost_eur)}</td>
@@ -265,7 +274,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                         </span>
                       </td>
                       <td className="p-3">
-                        <ProductActions product={product} onSetStatus={setProductStatus} />
+                        <ProductActions product={product} onSetStatus={setProductStatus} compact />
                       </td>
                     </tr>
                   ))}
@@ -286,7 +295,7 @@ function ProductActions({
 }: {
   product: Product;
   onSetStatus: (sku: string, status: 'Archived' | 'Active') => void;
-  /** Cards already link the name to the detail page, so they skip "View". */
+  /** Rows already link the name to the detail page, so they can skip "View". */
   compact?: boolean;
 }) {
   const button = 'text-xs font-bold border border-border rounded px-2.5 py-1.5';

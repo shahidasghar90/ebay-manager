@@ -131,7 +131,7 @@ export default function AccountsTable({
 
       <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="responsive-table w-full text-sm md:min-w-[720px]">
+          <table className="responsive-table data-table w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Date</th>
@@ -167,7 +167,9 @@ export default function AccountsTable({
                       </td>
                     )}
                     <td className="p-3" data-label="Direction">{tx.direction}</td>
-                    <td className="p-3" data-label="Notes">{tx.notes || '—'}</td>
+                    <td className="p-3 cell-wrap w-full" data-label="Notes">
+                      <span className="line-clamp-2" title={tx.notes || undefined}>{tx.notes || '—'}</span>
+                    </td>
                     <td className="p-3" data-label="Last Edited">
                       <RecordAuthorCell record={tx} />
                     </td>

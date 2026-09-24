@@ -81,7 +81,7 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
 
       <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="responsive-table w-full text-sm md:min-w-[640px]">
+          <table className="responsive-table data-table w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Image</th>
@@ -118,7 +118,11 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                       </div>
                     )}
                   </td>
-                  <td className="p-3" data-label="Keyword">{item.keyword}</td>
+                  <td className="p-3 cell-wrap w-full" data-label="Keyword">
+                    <span className="font-semibold leading-snug line-clamp-2" title={item.keyword}>
+                      {item.keyword}
+                    </span>
+                  </td>
                   <td className="p-3" data-label="Model">{item.potential_model}</td>
                   <td className="p-3" data-label="Price">{formatMoney(item.product_price_local)}</td>
                   <td className="p-3" data-label="Competitor Min/Avg/Max">
@@ -147,8 +151,9 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                       <Link
                         href={`/products/new?researchId=${item.id}`}
                         className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                        title="Convert to Product"
                       >
-                        Convert to Product
+                        Convert
                       </Link>
                     </div>
                   </td>

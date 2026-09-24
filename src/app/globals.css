@@ -60,6 +60,26 @@ body {
 }
 
 /*
+ * Desktop list tables: short values stay on one line, long text opts in to
+ * wrapping with .cell-wrap (and line-clamp on its content), so rows fit
+ * without a horizontal scrollbar.
+ */
+@media (min-width: 768px) {
+  .data-table th,
+  .data-table td {
+    padding: 10px 12px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .data-table td.cell-wrap {
+    white-space: normal;
+    min-width: 160px;
+    overflow-wrap: anywhere;
+  }
+}
+
+/*
  * Tables that collapse into stacked cards on phones. Each <td> carries a
  * data-label which is shown as the row heading once the <thead> is hidden.
  */

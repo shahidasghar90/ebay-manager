@@ -90,7 +90,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
 
       <div className="hidden md:block card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="responsive-table w-full text-sm md:min-w-[760px]">
+          <table className="responsive-table data-table w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-500 bg-slate-50">
                 <th className="p-3">Order ID</th>
@@ -118,7 +118,11 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                     <td className="p-3 font-semibold" data-label="Order ID">{order.order_id}</td>
                     <td className="p-3" data-label="Date">{formatDate(order.order_date)}</td>
                     <td className="p-3" data-label="SKU">{order.sku}</td>
-                    <td className="p-3" data-label="Buyer">{order.buyer_username || '—'}</td>
+                    <td className="p-3 cell-wrap" data-label="Buyer">
+                      <span className="line-clamp-2 break-all" title={order.buyer_username || undefined}>
+                        {order.buyer_username || '—'}
+                      </span>
+                    </td>
                     <td className="p-3" data-label="Qty">{order.quantity}</td>
                     <td className="p-3" data-label="Sale">{formatMoney(order.gross_sale_eur)}</td>
                     <td className="p-3" data-label="Profit">{formatMoney(order.net_profit_eur)}</td>
