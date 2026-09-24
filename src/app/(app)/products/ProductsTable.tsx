@@ -81,7 +81,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       return;
     }
 
-    notifyTeam(archiving ? 'Product archived' : 'Product restored', sku, '/products');
+    notifyTeam(archiving ? 'Product archived' : 'Product restored', sku, `/products/${sku}`);
     router.refresh();
   }
 

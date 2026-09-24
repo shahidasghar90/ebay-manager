@@ -81,9 +81,9 @@ export default function InventoryForm({
       notes: form.notes || null
     };
 
-    const { error: saveError } = isEditing
-      ? await supabase.from('inventory').update(payload).eq('id', item!.id)
-      : await supabase.from('inventory').insert(payload);
+    const { data: saved, error: saveError } = isEditing
+      ? await supabase.from('inventory').update(payload).eq('id', item!.id).select('id').single()
+      : await supabase.from('inventory').insert(payload).select('id').single();
 
     if (saveError) {
       if (!isEditing && saveError.code === '23505') {
@@ -98,7 +98,7 @@ export default function InventoryForm({
     notifyTeam(
       isEditing ? 'Inventory edited' : 'New inventory record',
       `${payload.sku} · ${payload.product_name}`,
-      '/inventory'
+      saved ? `/inventory/${saved.id}/edit` : '/inventory'
     );
 
     router.push('/inventory');

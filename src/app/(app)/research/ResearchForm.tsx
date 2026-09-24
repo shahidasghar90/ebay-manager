@@ -155,9 +155,9 @@ export default function ResearchForm({
       notes: form.notes || null
     };
 
-    const { error: saveError } = isEditing
-      ? await supabase.from('product_research').update(payload).eq('id', research!.id)
-      : await supabase.from('product_research').insert(payload);
+    const { data: saved, error: saveError } = isEditing
+      ? await supabase.from('product_research').update(payload).eq('id', research!.id).select('id').single()
+      : await supabase.from('product_research').insert(payload).select('id').single();
 
     setSaving(false);
 
@@ -169,7 +169,7 @@ export default function ResearchForm({
     notifyTeam(
       isEditing ? 'Research edited' : 'New product research',
       form.keyword,
-      isEditing ? `/research/${research!.id}` : '/research'
+      saved ? `/research/${saved.id}` : '/research'
     );
 
     if (isEditing) {

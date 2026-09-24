@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tradepilot-shell-v2';
+const CACHE_NAME = 'tradepilot-shell-v3';
 const SHELL_ASSETS = ['/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -49,17 +49,22 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/dashboard';
+  const path = (event.notification.data && event.notification.data.url) || '/dashboard';
+  const url = new URL(path, self.location.origin).href;
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
-        }
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
+      const client = clients.find((c) => new URL(c.url).origin === self.location.origin);
+      if (!client) return self.clients.openWindow(url);
+
+      // client.navigate() is unreliable in installed apps (and throws for uncontrolled
+      // clients), so the page navigates itself on this message.
+      client.postMessage({ type: 'navigate', url });
+      try {
+        await client.focus();
+      } catch {
+        // Focus can be refused; the page still navigates.
       }
-      return self.clients.openWindow(url);
     })
   );
 });

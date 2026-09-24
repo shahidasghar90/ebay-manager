@@ -96,7 +96,7 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
     notifyTeam(
       isEditing ? 'Transaction edited' : 'New transaction',
       `${form.type} · ${form.direction} ${formatMoney(num(form.amountEur))}`,
-      '/accounts'
+      `/accounts/${txId}/edit`
     );
 
     router.push('/accounts');

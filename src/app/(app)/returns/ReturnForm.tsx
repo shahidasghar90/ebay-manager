@@ -81,7 +81,7 @@ export default function ReturnForm({ orders }: { orders: Order[] }) {
     notifyTeam(
       'New return case',
       `${caseId}${orderId ? ` · order ${orderId}` : ''} · ${reason}`,
-      '/returns'
+      orderId ? `/orders/${orderId}` : '/returns'
     );
 
     router.push('/returns');
