@@ -57,7 +57,7 @@ export default function ImportOrdersPage() {
         ebayFeePercent: product.ebay_fee_percent,
         paymentFeePercent: product.payment_fee_percent,
         fixedPaymentFeeEur: product.fixed_payment_fee_eur,
-        productCostEur: product.total_cost_eur,
+        productCostEur: product.total_cost_eur * row.quantity,
         shippingPackagingCostEur: 0
       });
 
@@ -84,7 +84,7 @@ export default function ImportOrdersPage() {
         payment_fee_percent: product.payment_fee_percent,
         fixed_payment_fee_eur: product.fixed_payment_fee_eur,
         payment_fee_eur: pricing.paymentFeeEur,
-        product_cost_eur: product.total_cost_eur,
+        product_cost_eur: Math.round(product.total_cost_eur * row.quantity * 100) / 100,
         shipping_packaging_cost_eur: 0,
         total_order_cost_eur: pricing.totalOrderCostEur,
         net_profit_eur: pricing.netProfitEur,
@@ -134,6 +134,9 @@ export default function ImportOrdersPage() {
           Required columns: order_date, sales_platform, buyer_username, sku,
           quantity, sale_currency, item_price_local, shipping_charged_local,
           fulfillment_type, order_status, notes.
+        </p>
+        <p className="text-muted text-sm">
+          quantity = pieces leaving stock; item_price_local = total price of the order (not per piece).
         </p>
 
         <input type="file" accept=".csv,text/csv" onChange={handleFileSelect} />

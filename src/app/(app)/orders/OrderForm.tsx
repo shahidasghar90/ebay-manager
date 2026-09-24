@@ -17,6 +17,7 @@ type FormState = {
   salesPlatform: string;
   saleCurrency: 'EUR' | 'USD' | 'PKR' | 'CNY';
   itemPriceLocal: string;
+  priceBasis: 'total' | 'per_piece';
   shippingChargedLocal: string;
   shippingPackagingCostEur: string;
   fulfillmentType: string;
@@ -37,7 +38,9 @@ function initialState(order?: Order): FormState {
     quantity: String(order?.quantity ?? 1),
     salesPlatform: order?.sales_platform || 'eBay_DE',
     saleCurrency: (order?.sale_currency as FormState['saleCurrency']) || 'EUR',
+    // Saved orders always store the order total.
     itemPriceLocal: String(order?.item_price_local ?? ''),
+    priceBasis: 'total',
     shippingChargedLocal: String(order?.shipping_charged_local ?? ''),
     shippingPackagingCostEur: String(order?.shipping_packaging_cost_eur ?? ''),
     fulfillmentType: order?.fulfillment_type || 'Self',
@@ -108,20 +111,26 @@ export default function OrderForm({
     return row.quantity_on_hand - ((num(form.quantity) || 1) - alreadyTaken);
   }, [inventory, form.sku, form.quantity, order]);
 
+  const quantity = num(form.quantity) || 1;
+  const itemTotalLocal =
+    form.priceBasis === 'per_piece' ? num(form.itemPriceLocal) * quantity : num(form.itemPriceLocal);
+  const productCostEur = Math.round((selectedProduct?.total_cost_eur ?? 0) * quantity * 100) / 100;
+
   const pricing = useMemo(
     () =>
       calculateOrderPricing({
         fxRate: settings.fxRates[form.saleCurrency] || 1,
-        itemPriceLocal: num(form.itemPriceLocal),
+        itemPriceLocal: itemTotalLocal,
         shippingChargedLocal: num(form.shippingChargedLocal),
         ebayFeePercent: selectedProduct?.ebay_fee_percent ?? settings.ebayFeePercent,
         paymentFeePercent: selectedProduct?.payment_fee_percent ?? settings.paymentFeePercent,
         fixedPaymentFeeEur: selectedProduct?.fixed_payment_fee_eur ?? settings.fixedPaymentFeeEur,
-        productCostEur: selectedProduct?.total_cost_eur ?? 0,
+        productCostEur,
         shippingPackagingCostEur: num(form.shippingPackagingCostEur)
       }),
     [
-      form.itemPriceLocal,
+      itemTotalLocal,
+      productCostEur,
       form.shippingChargedLocal,
       form.shippingPackagingCostEur,
       form.saleCurrency,
@@ -142,7 +151,6 @@ export default function OrderForm({
     }
 
     const orderId = order?.order_id || `EB-${Date.now().toString(36).toUpperCase()}`;
-    const quantity = num(form.quantity) || 1;
 
     const payload = {
       order_id: orderId,
@@ -155,7 +163,7 @@ export default function OrderForm({
       quantity,
       sale_currency: form.saleCurrency,
       fx_rate: settings.fxRates[form.saleCurrency] || 1,
-      item_price_local: num(form.itemPriceLocal),
+      item_price_local: itemTotalLocal,
       shipping_charged_local: num(form.shippingChargedLocal),
       gross_sale_eur: pricing.grossSaleEur,
       fulfillment_type: form.fulfillmentType,
@@ -165,7 +173,7 @@ export default function OrderForm({
       payment_fee_percent: selectedProduct.payment_fee_percent,
       fixed_payment_fee_eur: selectedProduct.fixed_payment_fee_eur,
       payment_fee_eur: pricing.paymentFeeEur,
-      product_cost_eur: selectedProduct.total_cost_eur,
+      product_cost_eur: productCostEur,
       shipping_packaging_cost_eur: num(form.shippingPackagingCostEur),
       total_order_cost_eur: pricing.totalOrderCostEur,
       net_profit_eur: pricing.netProfitEur,
@@ -278,7 +286,7 @@ export default function OrderForm({
         </label>
 
         <label className="field-label">
-          Quantity *
+          Quantity (pieces) *
           <input
             className="field-input"
             type="number"
@@ -288,6 +296,9 @@ export default function OrderForm({
             value={form.quantity}
             onChange={(e) => setField('quantity', e.target.value)}
           />
+          <small className="text-muted font-normal text-[11px] -mt-0.5">
+            Pieces leaving stock — for a lot of 10, enter 10.
+          </small>
           {stockAfter !== null && stockAfter < 0 && (
             <small className="text-red font-normal text-[11px] -mt-0.5">
               Not enough stock: {stockAfter + (num(form.quantity) || 1)} on hand.
@@ -329,15 +340,31 @@ export default function OrderForm({
 
         <label className="field-label">
           Item Price (sale currency) *
-          <input
-            className="field-input"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            value={form.itemPriceLocal}
-            onChange={(e) => setField('itemPriceLocal', e.target.value)}
-          />
+          <div className="flex gap-2">
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              value={form.itemPriceLocal}
+              onChange={(e) => setField('itemPriceLocal', e.target.value)}
+            />
+            <select
+              className="field-input w-auto shrink-0"
+              value={form.priceBasis}
+              onChange={(e) => setField('priceBasis', e.target.value as FormState['priceBasis'])}
+              aria-label="Price basis"
+            >
+              <option value="total">Total</option>
+              <option value="per_piece">Per piece</option>
+            </select>
+          </div>
+          {form.priceBasis === 'per_piece' && quantity > 1 && (
+            <small className="text-muted font-normal text-[11px] -mt-0.5">
+              {quantity} × {num(form.itemPriceLocal)} = {Math.round(itemTotalLocal * 100) / 100} {form.saleCurrency}
+            </small>
+          )}
         </label>
 
         <label className="field-label">

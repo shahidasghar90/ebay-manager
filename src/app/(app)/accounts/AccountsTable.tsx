@@ -33,7 +33,12 @@ export default function AccountsTable({
       .filter((tx) => tx.direction === 'Out')
       .reduce((sum, tx) => sum + Number(tx.amount_eur || 0), 0);
 
-    return { totalIn, totalOut, net: totalIn - totalOut };
+    // VAT eBay charged on its fees: a cost, not reclaimable without VAT registration.
+    const feeVat = filtered
+      .filter((tx) => tx.type === 'Fee VAT')
+      .reduce((sum, tx) => sum + Number(tx.amount_eur || 0), 0);
+
+    return { totalIn, totalOut, net: totalIn - totalOut, feeVat };
   }, [filtered]);
 
   const vatSummary = useMemo(() => summarizeVat(filtered), [filtered]);
@@ -45,7 +50,7 @@ export default function AccountsTable({
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
         <SummaryCard label="Total In" value={formatMoney(totals.totalIn)} tone="text-green" />
         <SummaryCard label="Total Out" value={formatMoney(totals.totalOut)} tone="text-red" />
         <SummaryCard
@@ -53,6 +58,7 @@ export default function AccountsTable({
           value={formatMoney(totals.net)}
           tone={totals.net < 0 ? 'text-red' : 'text-green'}
         />
+        <SummaryCard label="VAT on eBay Fees" value={formatMoney(totals.feeVat)} tone="text-red" />
       </div>
 
       {vatRegistered && (

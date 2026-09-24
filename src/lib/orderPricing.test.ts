@@ -57,4 +57,8 @@ describe('expectedPayout', () => {
   it('subtracts selling and payment fees from the gross sale', () => {
     expect(expectedPayout({ gross_sale_eur: 100, ebay_fee_eur: 12.9, payment_fee_eur: 3.25 })).toBe(83.85);
   });
+
+  it('also subtracts the VAT eBay charges on its fees', () => {
+    expect(expectedPayout({ gross_sale_eur: 100, ebay_fee_eur: 12.9, payment_fee_eur: 3.25 }, 3.07)).toBe(80.78);
+  });
 });

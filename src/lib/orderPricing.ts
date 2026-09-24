@@ -35,13 +35,18 @@ export function calculateOrderPricing(input: OrderPricingInput): OrderPricingRes
   return { grossSaleEur, ebayFeeEur, paymentFeeEur, totalOrderCostEur, netProfitEur, netMargin };
 }
 
-/** What eBay should pay out: gross sale minus selling and payment fees (mirrors close_order). */
-export function expectedPayout(order: {
-  gross_sale_eur: number;
-  ebay_fee_eur: number;
-  payment_fee_eur: number;
-}): number {
+/**
+ * What eBay should pay out: gross sale minus selling and payment fees, minus the
+ * VAT eBay charges on those fees when known (mirrors close_order).
+ */
+export function expectedPayout(
+  order: { gross_sale_eur: number; ebay_fee_eur: number; payment_fee_eur: number },
+  feeVatEur = 0
+): number {
   return round2(
-    Number(order.gross_sale_eur || 0) - Number(order.ebay_fee_eur || 0) - Number(order.payment_fee_eur || 0)
+    Number(order.gross_sale_eur || 0) -
+      Number(order.ebay_fee_eur || 0) -
+      Number(order.payment_fee_eur || 0) -
+      feeVatEur
   );
 }

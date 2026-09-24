@@ -17,8 +17,9 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const router = useRouter();
   const supabase = createClient();
 
-  const expected = expectedPayout(order);
-  const [actual, setActual] = useState(String(expected));
+  const [feeVat, setFeeVat] = useState('0');
+  const expected = expectedPayout(order, num(feeVat));
+  const [actual, setActual] = useState(String(expectedPayout(order)));
   const [payoutDate, setPayoutDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -26,6 +27,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const adjustment = Math.round((num(actual) - expected) * 100) / 100;
   const fees = Number(order.ebay_fee_eur || 0) + Number(order.payment_fee_eur || 0);
   const shipping = Number(order.shipping_packaging_cost_eur || 0);
+  const suggestedFeeVat = Math.round(fees * 0.19 * 100) / 100;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -35,7 +37,8 @@ export default function CloseOrderForm({ order }: { order: Order }) {
     const { error: closeError } = await supabase.rpc('close_order', {
       p_order_id: order.order_id,
       p_actual_payout_eur: num(actual),
-      p_payout_date: payoutDate
+      p_payout_date: payoutDate,
+      p_fee_vat_eur: num(feeVat)
     });
 
     if (closeError) {
@@ -88,6 +91,28 @@ export default function CloseOrderForm({ order }: { order: Order }) {
           </label>
 
           <label className="field-label">
+            VAT on eBay Fees (EUR)
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="0.01"
+              value={feeVat}
+              onChange={(e) => setFeeVat(e.target.value)}
+            />
+            <small className="text-muted font-normal text-[11px] -mt-0.5">
+              From the eBay payout report.{' '}
+              <button
+                type="button"
+                className="text-blue font-bold underline"
+                onClick={() => setFeeVat(String(suggestedFeeVat))}
+              >
+                Use 19% of fees ({formatMoney(suggestedFeeVat)})
+              </button>
+            </small>
+          </label>
+
+          <label className="field-label">
             Payout Date *
             <input
               className="field-input"
@@ -103,6 +128,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
           <span className="text-[11px] uppercase text-muted font-bold">Posted to Accounts</span>
           <LedgerLine label="Sale" direction="In" amount={order.gross_sale_eur} />
           <LedgerLine label="Fees" direction="Out" amount={fees} />
+          {num(feeVat) > 0 && <LedgerLine label="VAT on Fees" direction="Out" amount={num(feeVat)} />}
           {shipping > 0 && <LedgerLine label="Shipping" direction="Out" amount={shipping} />}
           {adjustment !== 0 && (
             <LedgerLine

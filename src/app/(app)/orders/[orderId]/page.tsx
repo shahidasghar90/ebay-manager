@@ -86,7 +86,11 @@ export default async function OrderDetailPage({
         </Section>
 
         <Section title="Payout">
-          <Field label="Expected Payout" value={formatMoney(expectedPayout(order))} />
+          <Field
+            label="Expected Payout"
+            value={formatMoney(expectedPayout(order, Number(order.fee_vat_eur || 0)))}
+          />
+          <Field label="VAT on Fees" value={order.closed_at ? formatMoney(order.fee_vat_eur) : '—'} />
           <Field
             label="Received"
             value={order.actual_payout_eur != null ? formatMoney(order.actual_payout_eur) : 'Not closed yet'}

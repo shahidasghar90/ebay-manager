@@ -89,6 +89,7 @@ export type Order = RecordAuthor & {
   actual_payout_eur: number | null;
   payout_date: string | null;
   adjustment_eur: number;
+  fee_vat_eur: number;
   closed_at: string | null;
   notes: string | null;
   created_at: string;
