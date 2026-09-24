@@ -4,6 +4,12 @@
 -- an order is closed, instead of hiding it inside the payout Adjustment.
 -- (Not reclaimable for a Kleinunternehmer, so it is booked as a cost.)
 
+-- Ledger entries carry VAT columns; older projects never ran
+-- 2026-09-20-vat-and-competitor-pricing.sql, so make sure they exist.
+alter table accounts
+  add column if not exists vat_rate_percent numeric,
+  add column if not exists vat_amount_eur numeric;
+
 alter table orders
   add column if not exists fee_vat_eur numeric not null default 0;
 
