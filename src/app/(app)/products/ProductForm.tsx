@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/compressImage';
 import { storageSafe } from '@/lib/storagePath';
@@ -28,6 +28,17 @@ const CATEGORY_PRESETS = [
   'Automotive',
   'Other'
 ];
+
+const TABS = [
+  { id: 'basic', label: 'Basic Info' },
+  { id: 'platform', label: 'Platform' },
+  { id: 'supplier', label: 'Supplier' },
+  { id: 'photos', label: 'Photos' },
+  { id: 'costing', label: 'Costing' },
+  { id: 'notes', label: 'Notes' }
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
 
 type FormState = {
   sku: string;
@@ -175,6 +186,9 @@ export default function ProductForm({
   const [error, setError] = useState('');
   const [salesPlatforms, setSalesPlatforms] = useState<SalesPlatform[]>([]);
   const [fulfillmentModels, setFulfillmentModels] = useState<FulfillmentModel[]>([]);
+  const [activeTab, setActiveTab] = useState<TabId>('basic');
+  const formRef = useRef<HTMLFormElement>(null);
+  const tabBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSettings(supabase).then(setSettings);
@@ -182,6 +196,22 @@ export default function ProductForm({
     fetchFulfillmentModels(supabase).then(setFulfillmentModels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function selectTab(id: TabId) {
+    setActiveTab(id);
+    const button = tabBarRef.current?.querySelector<HTMLElement>(`[data-tab-button="${id}"]`);
+    button?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }
+
+  // A required field inside a hidden tab cannot show its validation bubble, so jump to its tab.
+  function handleInvalid(event: React.FormEvent<HTMLFormElement>) {
+    const section = (event.target as HTMLElement).closest<HTMLElement>('[data-tab]');
+    const id = section?.dataset.tab as TabId | undefined;
+    if (id && id !== activeTab) {
+      selectTab(id);
+      requestAnimationFrame(() => formRef.current?.reportValidity());
+    }
+  }
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -402,7 +432,7 @@ export default function ProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6">
+    <form ref={formRef} onSubmit={handleSubmit} onInvalidCapture={handleInvalid} className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <div className="card p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <PreviewField label="Total Cost (per unit)" value={formatMoney(pricing.totalCostEur)} />
@@ -421,7 +451,31 @@ export default function ProductForm({
         </div>
       </div>
 
-      <FormSection title="Basic Info">
+      <div
+        ref={tabBarRef}
+        role="tablist"
+        className="flex gap-2 overflow-x-auto snap-x -mb-2 pb-1 no-scrollbar"
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            data-tab-button={tab.id}
+            onClick={() => selectTab(tab.id)}
+            className={`snap-start shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${
+              activeTab === tab.id
+                ? 'bg-blue text-white border-blue'
+                : 'bg-white text-muted border-border'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <FormSection tabId="basic" activeTab={activeTab} title="Basic Info">
         <label className="field-label">
           Product Name *
           <input
@@ -477,6 +531,8 @@ export default function ProductForm({
       </FormSection>
 
       <FormSection
+        tabId="platform"
+        activeTab={activeTab}
         title="Platform & Fulfillment"
         hint="Where you sell it, and how it gets to the buyer."
       >
@@ -566,7 +622,7 @@ export default function ProductForm({
         )}
       </FormSection>
 
-      <FormSection title="Supplier / Sourcing">
+      <FormSection tabId="supplier" activeTab={activeTab} title="Supplier / Sourcing">
         <label className="field-label">
           Supplier Name
           <input
@@ -638,7 +694,7 @@ export default function ProductForm({
         />
       </FormSection>
 
-      <FormSection title="Photos">
+      <FormSection tabId="photos" activeTab={activeTab} title="Photos">
         <div className="field-label sm:col-span-2">
           Product Photos (up to 5)
           <div className="flex flex-wrap gap-2">
@@ -685,7 +741,7 @@ export default function ProductForm({
         </div>
       </FormSection>
 
-      <FormSection title="Costing" hint="What it costs you, and what you plan to sell it for.">
+      <FormSection tabId="costing" activeTab={activeTab} title="Costing" hint="What it costs you, and what you plan to sell it for.">
         <label className="field-label">
           Source Currency *
           <select
@@ -745,7 +801,7 @@ export default function ProductForm({
         <NumberField label="Target Profit %" value={form.targetProfitPercent} onChange={(v) => setField('targetProfitPercent', v)} step="0.01" />
       </FormSection>
 
-      <FormSection title="Notes">
+      <FormSection tabId="notes" activeTab={activeTab} title="Notes">
         <label className="field-label sm:col-span-2">
           Notes
           <textarea
@@ -769,16 +825,20 @@ export default function ProductForm({
 }
 
 function FormSection({
+  tabId,
+  activeTab,
   title,
   hint,
   children
 }: {
+  tabId: TabId;
+  activeTab: TabId;
   title: string;
   hint?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="card p-5">
+    <div data-tab={tabId} role="tabpanel" className={`card p-5 ${activeTab === tabId ? '' : 'hidden'}`}>
       <div className="mb-3.5">
         <h3 className="font-bold text-base m-0">{title}</h3>
         {hint && <p className="text-muted text-[13px] mt-0.5 m-0">{hint}</p>}
