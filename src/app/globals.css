@@ -27,7 +27,8 @@ body {
   @apply bg-[#fef3c7] text-[#92400e];
 }
 
-.status-closed {
+.status-closed,
+.status-sold {
   @apply bg-[#dbeafe] text-[#1e40af];
 }
 

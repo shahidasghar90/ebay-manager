@@ -10,16 +10,29 @@ import type { FulfillmentModel, Product } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 import { RecordAuthorCell } from '@/components/RecordAuthor';
 
-// "All" deliberately leaves out Archived and Research: those only live in their own tabs.
-const STATUS_TABS = ['All', 'Active', 'Research', 'Paused', 'Out of Stock', 'Archived'] as const;
+// "All" deliberately leaves out Archived, Research and Sold: those only live in their own tabs.
+const STATUS_TABS = ['All', 'Active', 'Research', 'Paused', 'Out of Stock', 'Sold', 'Archived'] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
-function inTab(product: Product, tab: StatusTab) {
-  if (tab === 'All') return product.product_status !== 'Archived' && product.product_status !== 'Research';
-  return product.product_status === tab;
+/** A product whose order was closed and has no stock left shows as Sold, unless archived. */
+function effectiveStatus(product: Product, soldSkus: Set<string>) {
+  if (product.product_status !== 'Archived' && soldSkus.has(product.sku)) return 'Sold';
+  return product.product_status;
 }
 
-export default function ProductsTable({ products }: { products: Product[] }) {
+function inTab(status: string, tab: StatusTab) {
+  if (tab === 'All') return status !== 'Archived' && status !== 'Research' && status !== 'Sold';
+  return status === tab;
+}
+
+export default function ProductsTable({
+  products,
+  soldSkus: soldSkuList
+}: {
+  products: Product[];
+  soldSkus: string[];
+}) {
+  const soldSkus = useMemo(() => new Set(soldSkuList), [soldSkuList]);
   const router = useRouter();
   const supabase = createClient();
 
@@ -54,14 +67,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
   const tabCounts = useMemo(
     () =>
       Object.fromEntries(
-        STATUS_TABS.map((tab) => [tab, searched.filter((product) => inTab(product, tab)).length])
+        STATUS_TABS.map((tab) => [tab, searched.filter((product) => inTab(effectiveStatus(product, soldSkus), tab)).length])
       ) as Record<StatusTab, number>,
-    [searched]
+    [searched, soldSkus]
   );
 
   const filtered = useMemo(
-    () => searched.filter((product) => inTab(product, statusTab)),
-    [searched, statusTab]
+    () => searched.filter((product) => inTab(effectiveStatus(product, soldSkus), statusTab)),
+    [searched, statusTab, soldSkus]
   );
 
   async function setProductStatus(sku: string, status: 'Archived' | 'Active') {
@@ -219,8 +232,8 @@ ${count} order(s) use this SKU. They stay in Orders but lose the product link.`
                       >
                         {product.product_name}
                       </Link>
-                      <span className={`${statusClassName(product.product_status)} shrink-0`}>
-                        {product.product_status}
+                      <span className={`${statusClassName(effectiveStatus(product, soldSkus))} shrink-0`}>
+                        {effectiveStatus(product, soldSkus)}
                       </span>
                     </div>
 
@@ -305,8 +318,8 @@ ${count} order(s) use this SKU. They stay in Orders but lose the product link.`
                         <RecordAuthorCell record={product} />
                       </td>
                       <td className="p-3">
-                        <span className={statusClassName(product.product_status)}>
-                          {product.product_status}
+                        <span className={statusClassName(effectiveStatus(product, soldSkus))}>
+                          {effectiveStatus(product, soldSkus)}
                         </span>
                       </td>
                       <td className="p-3">
