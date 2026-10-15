@@ -89,9 +89,16 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <RecordAuthorShort record={order} />
-                  <Link href={actionHref(order)} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue shrink-0">
-                    {isLocked(order) ? 'View' : 'Edit'}
-                  </Link>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Link href={actionHref(order)} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                      {isLocked(order) ? 'View' : 'Edit'}
+                    </Link>
+                    {!isLocked(order) && (
+                      <Link href={`/orders/${order.order_id}/close`} className="text-xs font-bold border border-blue bg-blue text-white rounded px-2.5 py-1.5">
+                        Close
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </li>
             );
@@ -157,6 +164,14 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                         >
                           {isLocked(order) ? 'View' : 'Edit'}
                         </Link>
+                        {!isLocked(order) && (
+                          <Link
+                            href={`/orders/${order.order_id}/close`}
+                            className="text-xs font-bold border border-blue bg-blue text-white rounded px-2.5 py-1.5"
+                          >
+                            Close
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
