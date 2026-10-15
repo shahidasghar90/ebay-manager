@@ -85,6 +85,42 @@ export default function ProductsTable({ products }: { products: Product[] }) {
     router.refresh();
   }
 
+  // Only archived products can be deleted; this removes the product, its stock row and its photos.
+  async function deleteProduct(product: Product) {
+    const { count } = await supabase
+      .from('orders')
+      .select('order_id', { count: 'exact', head: true })
+      .eq('sku', product.sku);
+
+    const orderNote = count
+      ? `
+
+${count} order(s) use this SKU. They stay in Orders but lose the product link.`
+      : '';
+    const question = `Delete ${product.sku} (${product.product_name}) permanently? Its inventory and stock history are removed too. This cannot be undone.${orderNote}`;
+    if (!confirm(question)) return;
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('sku', product.sku)
+      .eq('product_status', 'Archived');
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    const paths = (product.image_file_ids || []).filter(Boolean);
+    if (paths.length > 0) {
+      const { error: removeError } = await supabase.storage.from('product-images').remove(paths);
+      if (removeError) console.error('Failed to delete product photos:', removeError.message);
+    }
+
+    notifyTeam('Product deleted', `${product.sku} · ${product.product_name}`, '/products');
+    router.refresh();
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row gap-2.5 mb-3 sm:mb-4">
@@ -209,7 +245,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                       <span className="text-muted text-[11px] truncate">
                         {editor ? `by ${editor.split('@')[0]}` : ''}
                       </span>
-                      <ProductActions product={product} onSetStatus={setProductStatus} compact />
+                      <ProductActions product={product} onSetStatus={setProductStatus} onDelete={deleteProduct} compact />
                     </div>
                   </div>
                 </li>
@@ -274,7 +310,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                         </span>
                       </td>
                       <td className="p-3">
-                        <ProductActions product={product} onSetStatus={setProductStatus} compact />
+                        <ProductActions product={product} onSetStatus={setProductStatus} onDelete={deleteProduct} compact />
                       </td>
                     </tr>
                   ))}
@@ -291,10 +327,12 @@ export default function ProductsTable({ products }: { products: Product[] }) {
 function ProductActions({
   product,
   onSetStatus,
+  onDelete,
   compact = false
 }: {
   product: Product;
   onSetStatus: (sku: string, status: 'Archived' | 'Active') => void;
+  onDelete: (product: Product) => void;
   /** Rows already link the name to the detail page, so they can skip "View". */
   compact?: boolean;
 }) {
@@ -311,13 +349,22 @@ function ProductActions({
         Edit
       </Link>
       {product.product_status === 'Archived' ? (
-        <button
-          type="button"
-          className={`${button} hover:border-green hover:text-green`}
-          onClick={() => onSetStatus(product.sku, 'Active')}
-        >
-          Restore
-        </button>
+        <>
+          <button
+            type="button"
+            className={`${button} hover:border-green hover:text-green`}
+            onClick={() => onSetStatus(product.sku, 'Active')}
+          >
+            Restore
+          </button>
+          <button
+            type="button"
+            className={`${button} text-red border-red/40 hover:border-red`}
+            onClick={() => onDelete(product)}
+          >
+            Delete
+          </button>
+        </>
       ) : (
         <button
           type="button"
