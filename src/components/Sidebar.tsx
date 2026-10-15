@@ -10,8 +10,8 @@ const NAV_ITEMS = [
   { href: '/research', label: 'Product Research', icon: '⌕' },
   { href: '/products', label: 'Product List', icon: '◫' },
   { href: '/orders', label: 'Order List', icon: '▤' },
-  { href: '/inventory', label: 'Inventory', icon: '▣' },
   { href: '/accounts', label: 'Accounts', icon: '$' },
+  { href: '/inventory', label: 'Inventory', icon: '▣' },
   { href: '/returns', label: 'Returns', icon: '↩' },
   { href: '/settings', label: 'Settings', icon: '⚙' }
 ];
