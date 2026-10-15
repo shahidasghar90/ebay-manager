@@ -38,7 +38,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
         <input
           className="field-input sm:max-w-[420px]"
-          placeholder="Search order ID, SKU, buyer..."
+          placeholder="Search order ID, SKU, product, buyer..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -76,7 +76,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                 </div>
                 <p className="text-muted text-xs m-0 mt-0.5 truncate">
                   {formatDate(order.order_date)} · {order.sku} · Qty {order.quantity}
-                  {order.buyer_username ? ` · ${order.buyer_username}` : ''}
+                  {order.product_name ? ` · ${order.product_name}` : ''}
                 </p>
                 <p className="text-[13px] m-0 mt-1.5 flex flex-wrap gap-x-3">
                   <span>
@@ -107,7 +107,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                 <th className="p-3">Order ID</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">SKU</th>
-                <th className="p-3">Buyer</th>
+                <th className="p-3">Product</th>
                 <th className="p-3">Qty</th>
                 <th className="p-3">Sale</th>
                 <th className="p-3">Profit</th>
@@ -133,9 +133,9 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                     </td>
                     <td className="p-3" data-label="Date">{formatDate(order.order_date)}</td>
                     <td className="p-3" data-label="SKU">{order.sku}</td>
-                    <td className="p-3 cell-wrap" data-label="Buyer">
-                      <span className="line-clamp-2 break-all" title={order.buyer_username || undefined}>
-                        {order.buyer_username || '—'}
+                    <td className="p-3 cell-wrap" data-label="Product">
+                      <span className="line-clamp-2" title={order.product_name || undefined}>
+                        {order.product_name || '—'}
                       </span>
                     </td>
                     <td className="p-3" data-label="Qty">{order.quantity}</td>
