@@ -20,10 +20,7 @@ export default async function ResearchPage() {
         subtitle="Save sourcing opportunities and product links"
       />
 
-      <div className="grid gap-6">
-        <AddResearchButton />
-        <ResearchTable items={(data as ResearchItem[]) || []} />
-      </div>
+      <ResearchTable items={(data as ResearchItem[]) || []} action={<AddResearchButton />} />
     </div>
   );
 }

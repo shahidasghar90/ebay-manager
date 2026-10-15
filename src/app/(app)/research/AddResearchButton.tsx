@@ -8,11 +8,9 @@ export default function AddResearchButton() {
 
   return (
     <>
-      <div className="flex justify-end">
-        <button type="button" className="btn-primary" onClick={() => setOpen(true)}>
-          + Add Research
-        </button>
-      </div>
+      <button type="button" className="btn-primary whitespace-nowrap" onClick={() => setOpen(true)}>
+        + Add Research
+      </button>
 
       {open && (
         <div

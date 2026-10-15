@@ -1,42 +1,54 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { formatMoney, statusClassName } from '@/lib/format';
-import { summarizeCompetitorPrices } from '@/lib/competitorStats';
-import type { ResearchItem } from '@/lib/types';
-import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { formatMoney, statusClassName } from "@/lib/format";
+import { summarizeCompetitorPrices } from "@/lib/competitorStats";
+import type { ResearchItem } from "@/lib/types";
+import { RecordAuthorCell, RecordAuthorShort } from "@/components/RecordAuthor";
 
-type Tab = 'Research' | 'Archive';
+type Tab = "Research" | "Archive";
 
-export default function ResearchTable({ items: allItems }: { items: ResearchItem[] }) {
+export default function ResearchTable({
+  items: allItems,
+  action,
+}: {
+  items: ResearchItem[];
+  /** Shown on the same line as the tabs (e.g. the Add Research button). */
+  action?: React.ReactNode;
+}) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('Research');
+  const [tab, setTab] = useState<Tab>("Research");
 
   // Converted ideas already became products, so they live in the Archive tab only.
   const { open, archived } = useMemo(
     () => ({
-      open: allItems.filter((item) => item.research_status !== 'Converted'),
-      archived: allItems.filter((item) => item.research_status === 'Converted')
+      open: allItems.filter((item) => item.research_status !== "Converted"),
+      archived: allItems.filter((item) => item.research_status === "Converted"),
     }),
-    [allItems]
+    [allItems],
   );
-  const items = tab === 'Archive' ? archived : open;
+  const items = tab === "Archive" ? archived : open;
 
   const tabs = (
-    <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-      {(['Research', 'Archive'] as const).map((name) => (
-        <button
-          key={name}
-          type="button"
-          onClick={() => setTab(name)}
-          className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${
-            tab === name ? 'bg-blue text-white border-blue' : 'bg-white text-muted border-border'
-          }`}
-        >
-          {name} ({name === 'Archive' ? archived.length : open.length})
-        </button>
-      ))}
+    <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar min-w-0">
+        {(["Research", "Archive"] as const).map((name) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => setTab(name)}
+            className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${
+              tab === name
+                ? "bg-blue text-white border-blue"
+                : "bg-white text-muted border-border"
+            }`}
+          >
+            {name} ({name === "Archive" ? archived.length : open.length})
+          </button>
+        ))}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 
@@ -45,7 +57,9 @@ export default function ResearchTable({ items: allItems }: { items: ResearchItem
       <div>
         {tabs}
         <div className="card p-6 text-center text-muted">
-          {tab === 'Archive' ? 'No converted research yet.' : 'No research records yet.'}
+          {tab === "Archive"
+            ? "No converted research yet."
+            : "No research records yet."}
         </div>
       </div>
     );
@@ -88,26 +102,36 @@ export default function ResearchTable({ items: allItems }: { items: ResearchItem
                   >
                     {item.keyword}
                   </Link>
-                  <span className={`${statusClassName(item.research_status)} shrink-0`}>
+                  <span
+                    className={`${statusClassName(item.research_status)} shrink-0`}
+                  >
                     {item.research_status}
                   </span>
                 </div>
                 <p className="text-muted text-xs m-0 mt-0.5 truncate">
-                  {item.potential_model} · Price {formatMoney(item.product_price_local)}
+                  {item.potential_model} · Price{" "}
+                  {formatMoney(item.product_price_local)}
                 </p>
                 {stats.min != null && (
                   <p className="text-[13px] m-0 mt-1 truncate">
-                    Competitors {formatMoney(stats.min)} / {formatMoney(stats.avg!)} / {formatMoney(stats.max!)}
+                    Competitors {formatMoney(stats.min)} /{" "}
+                    {formatMoney(stats.avg!)} / {formatMoney(stats.max!)}
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <RecordAuthorShort record={item} />
                   <div className="flex gap-1.5 shrink-0">
-                    <Link href={`/research/${item.id}`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                    <Link
+                      href={`/research/${item.id}`}
+                      className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                    >
                       Edit
                     </Link>
-                    {tab !== 'Archive' && (
-                      <Link href={`/products/new?researchId=${item.id}`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                    {tab !== "Archive" && (
+                      <Link
+                        href={`/products/new?researchId=${item.id}`}
+                        className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                      >
                         Convert
                       </Link>
                     )}
@@ -159,16 +183,25 @@ export default function ResearchTable({ items: allItems }: { items: ResearchItem
                     )}
                   </td>
                   <td className="p-3 cell-wrap w-full" data-label="Keyword">
-                    <span className="font-semibold leading-snug line-clamp-2" title={item.keyword}>
+                    <span
+                      className="font-semibold leading-snug line-clamp-2"
+                      title={item.keyword}
+                    >
                       {item.keyword}
                     </span>
                   </td>
-                  <td className="p-3" data-label="Model">{item.potential_model}</td>
-                  <td className="p-3" data-label="Price">{formatMoney(item.product_price_local)}</td>
+                  <td className="p-3" data-label="Model">
+                    {item.potential_model}
+                  </td>
+                  <td className="p-3" data-label="Price">
+                    {formatMoney(item.product_price_local)}
+                  </td>
                   <td className="p-3" data-label="Competitor Min/Avg/Max">
                     {(() => {
-                      const stats = summarizeCompetitorPrices(item.competitor_prices || []);
-                      if (stats.min == null) return '—';
+                      const stats = summarizeCompetitorPrices(
+                        item.competitor_prices || [],
+                      );
+                      if (stats.min == null) return "—";
                       return `${formatMoney(stats.min)} / ${formatMoney(stats.avg!)} / ${formatMoney(stats.max!)}`;
                     })()}
                   </td>
@@ -188,7 +221,7 @@ export default function ResearchTable({ items: allItems }: { items: ResearchItem
                       >
                         Edit
                       </Link>
-                      {tab !== 'Archive' && (
+                      {tab !== "Archive" && (
                         <Link
                           href={`/products/new?researchId=${item.id}`}
                           className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
