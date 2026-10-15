@@ -24,11 +24,13 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const router = useRouter();
   const supabase = createClient();
 
-  // Only the amount received is needed. Everything eBay kept (gross − received)
-  // is fees incl. 19% VAT, so the VAT part is worked out from that; whatever
-  // differs from the estimated fees becomes the Adjustment.
+  // Amount received is eBay's "Sales proceeds less costs", before the shipping label.
+  // Everything eBay kept (gross − received) is fees incl. 19% VAT, so the VAT part is
+  // worked out from that; the label is booked as Shipping, and whatever differs from
+  // the estimated fees becomes the Adjustment.
   const [actual, setActual] = useState('');
   const [feeVatOverride, setFeeVatOverride] = useState<string | null>(null);
+  const [labelCost, setLabelCost] = useState(String(order.shipping_packaging_cost_eur ?? 0));
   const [payoutDate, setPayoutDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,12 +43,39 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const expected = expectedPayout(order, num(feeVat));
   const adjustment = hasActual ? round2(num(actual) - expected) : 0;
   const fees = Number(order.ebay_fee_eur || 0) + Number(order.payment_fee_eur || 0);
-  const shipping = Number(order.shipping_packaging_cost_eur || 0);
+  const savedShipping = Number(order.shipping_packaging_cost_eur || 0);
+  const shipping = num(labelCost);
+  const shippingDiff = round2(shipping - savedShipping);
+  const netProfit = round2(Number(order.net_profit_eur || 0) - shippingDiff + adjustment - num(feeVat));
+
+  // eBay keeping far more than its fees usually means the label was already subtracted.
+  const looksLikeLabelSubtracted = hasActual && deducted > fees * 1.5 + 1;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
     setError('');
+
+    // close_order books the shipping saved on the order, so save the label cost first.
+    if (shippingDiff !== 0) {
+      const gross = Number(order.gross_sale_eur || 0);
+      const newNet = round2(Number(order.net_profit_eur || 0) - shippingDiff);
+      const { error: shippingError } = await supabase
+        .from('orders')
+        .update({
+          shipping_packaging_cost_eur: shipping,
+          total_order_cost_eur: round2(Number(order.total_order_cost_eur || 0) + shippingDiff),
+          net_profit_eur: newNet,
+          net_margin: gross > 0 ? Math.round((newNet / gross) * 10000) / 10000 : 0
+        })
+        .eq('order_id', order.order_id);
+
+      if (shippingError) {
+        setError(shippingError.message);
+        setSaving(false);
+        return;
+      }
+    }
 
     const { error: closeError } = await supabase.rpc('close_order', {
       p_order_id: order.order_id,
@@ -74,7 +103,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   return (
     <form onSubmit={handleSubmit} className="grid gap-6 max-w-2xl">
       <div className="card p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <PreviewField label="Gross Sale" value={formatMoney(order.gross_sale_eur)} />
           <PreviewField label="eBay Kept" value={hasActual ? formatMoney(deducted) : '—'} />
           <PreviewField label="Estimated Fees" value={formatMoney(fees)} />
@@ -82,6 +111,11 @@ export default function CloseOrderForm({ order }: { order: Order }) {
             label="Adjustment"
             value={formatMoney(adjustment)}
             tone={adjustment < 0 ? 'text-red' : adjustment > 0 ? 'text-green' : ''}
+          />
+          <PreviewField
+            label="Net Profit"
+            value={hasActual ? formatMoney(netProfit) : '—'}
+            tone={hasActual ? (netProfit < 0 ? 'text-red' : 'text-green') : ''}
           />
         </div>
       </div>
@@ -102,7 +136,22 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               onChange={(e) => setActual(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              eBay &quot;Sales proceeds less costs&quot;.
+              eBay &quot;Sales proceeds less costs&quot;, before the shipping label.
+            </small>
+          </label>
+
+          <label className="field-label">
+            Shipping Label Cost (EUR)
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="0.01"
+              value={labelCost}
+              onChange={(e) => setLabelCost(e.target.value)}
+            />
+            <small className="text-muted font-normal text-[11px] -mt-0.5">
+              What you paid for the label (and box). Booked as Shipping.
             </small>
           </label>
 
@@ -142,6 +191,13 @@ export default function CloseOrderForm({ order }: { order: Order }) {
             />
           </label>
         </div>
+
+        {looksLikeLabelSubtracted && (
+          <p className="m-0 text-[13px] rounded-md bg-amber-50 border border-amber-200 text-amber-900 p-2.5">
+            eBay kept {formatMoney(deducted)}, much more than the fees of about {formatMoney(fees)}. If this
+            amount is already after the shipping label, add the label to it, so VAT and fees stay correct.
+          </p>
+        )}
 
         <div className="grid gap-1 text-[13px]">
           <span className="text-[11px] uppercase text-muted font-bold">Posted to Accounts</span>
