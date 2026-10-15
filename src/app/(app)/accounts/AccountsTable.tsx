@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatDate, formatMoney } from '@/lib/format';
 import { summarizeVat } from '@/lib/vat';
 import { buildLedgerRows, signedAmount } from '@/lib/ledgerRows';
+import { buildAccountsCsv } from '@/lib/accountsCsv';
 import type { AccountTx } from '@/lib/types';
 import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
@@ -50,6 +51,18 @@ export default function AccountsTable({
     () => Array.from(new Set(transactions.map((tx) => tx.type))).sort(),
     [transactions]
   );
+
+  // Downloads exactly what the filters show, one line per ledger entry.
+  function downloadCsv() {
+    const entries = rows.flatMap((row) => row.parts);
+    const blob = new Blob([buildAccountsCsv(entries)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `accounts-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div>
@@ -99,6 +112,15 @@ export default function AccountsTable({
             </option>
           ))}
         </select>
+
+        <button
+          type="button"
+          onClick={downloadCsv}
+          disabled={rows.length === 0}
+          className="btn-secondary sm:ml-auto disabled:opacity-50"
+        >
+          Download CSV
+        </button>
       </div>
 
       {/* Phones: one compact card per row. */}
