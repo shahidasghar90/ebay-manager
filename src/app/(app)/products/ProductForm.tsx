@@ -756,8 +756,8 @@ export default function ProductForm({
           <h3 className="font-bold text-base m-0 mb-3.5">Photos</h3>
         <div className="field-label">
           Product Photos (up to 5)
-          <div className="flex flex-wrap gap-2">
-            <label className="btn-secondary cursor-pointer">
+          <div className="grid grid-cols-1 gap-2">
+            <label className="btn-secondary cursor-pointer w-full justify-center text-center">
               📷 Take Photo
               <input
                 type="file"
@@ -767,7 +767,7 @@ export default function ProductForm({
                 onChange={handleImageSelect}
               />
             </label>
-            <label className="btn-secondary cursor-pointer">
+            <label className="btn-secondary cursor-pointer w-full justify-center text-center">
               🖼 Choose Files
               <input
                 type="file"
@@ -778,9 +778,9 @@ export default function ProductForm({
               />
             </label>
           </div>
-          <div className="flex flex-wrap gap-2.5 mt-2">
+          <div className="grid grid-cols-3 gap-2.5 mt-2">
             {images.map((image, index) => (
-              <div key={`${image.path}-${index}`} className="relative w-[72px] h-[72px]">
+              <div key={`${image.path}-${index}`} className="relative aspect-square">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={image.url}
