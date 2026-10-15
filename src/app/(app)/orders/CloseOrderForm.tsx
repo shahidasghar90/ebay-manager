@@ -24,10 +24,10 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const router = useRouter();
   const supabase = createClient();
 
-  // Amount received is eBay's "Sales proceeds less costs", before the shipping label.
-  // Everything eBay kept (gross − received) is fees incl. 19% VAT, so the VAT part is
-  // worked out from that; the label is booked as Shipping, and whatever differs from
-  // the estimated fees becomes the Adjustment.
+  // Amount received is the money that reached the account, after eBay took the shipping
+  // label from the payout. Adding the label back gives eBay's "Sales proceeds less costs";
+  // what eBay kept of the gross is then fees incl. 19% VAT, the label is booked as
+  // Shipping, and whatever differs from the estimated fees becomes the Adjustment.
   const [actual, setActual] = useState('');
   const [feeVatOverride, setFeeVatOverride] = useState<string | null>(null);
   const [labelCost, setLabelCost] = useState(String(order.shipping_packaging_cost_eur ?? 0));
@@ -36,20 +36,20 @@ export default function CloseOrderForm({ order }: { order: Order }) {
   const [error, setError] = useState('');
 
   const hasActual = actual.trim() !== '';
-  const deducted = hasActual ? Math.max(round2(Number(order.gross_sale_eur || 0) - num(actual)), 0) : 0;
+  const labelCostEur = num(labelCost);
+  // eBay's "Sales proceeds less costs": the received amount before the label was taken.
+  const proceeds = round2(num(actual) + labelCostEur);
+  const deducted = hasActual ? Math.max(round2(Number(order.gross_sale_eur || 0) - proceeds), 0) : 0;
   const autoFeeVat = round2(deducted - deducted / (1 + FEE_VAT_RATE));
   const feeVat = feeVatOverride ?? String(autoFeeVat);
 
   const expected = expectedPayout(order, num(feeVat));
-  const adjustment = hasActual ? round2(num(actual) - expected) : 0;
+  const adjustment = hasActual ? round2(proceeds - expected) : 0;
   const fees = Number(order.ebay_fee_eur || 0) + Number(order.payment_fee_eur || 0);
   const savedShipping = Number(order.shipping_packaging_cost_eur || 0);
   const shipping = num(labelCost);
   const shippingDiff = round2(shipping - savedShipping);
   const netProfit = round2(Number(order.net_profit_eur || 0) - shippingDiff + adjustment - num(feeVat));
-
-  // eBay keeping far more than its fees usually means the label was already subtracted.
-  const looksLikeLabelSubtracted = hasActual && deducted > fees * 1.5 + 1;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -79,7 +79,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
 
     const { error: closeError } = await supabase.rpc('close_order', {
       p_order_id: order.order_id,
-      p_actual_payout_eur: num(actual),
+      p_actual_payout_eur: proceeds,
       p_payout_date: payoutDate,
       p_fee_vat_eur: num(feeVat)
     });
@@ -131,12 +131,12 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               step="0.01"
               required
               autoFocus
-              placeholder={String(expectedPayout(order))}
+              placeholder={String(round2(expectedPayout(order) - labelCostEur))}
               value={actual}
               onChange={(e) => setActual(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              eBay &quot;Sales proceeds less costs&quot;, before the shipping label.
+              What reached your account for this order, after eBay took the shipping label.
             </small>
           </label>
 
@@ -151,7 +151,7 @@ export default function CloseOrderForm({ order }: { order: Order }) {
               onChange={(e) => setLabelCost(e.target.value)}
             />
             <small className="text-muted font-normal text-[11px] -mt-0.5">
-              What you paid for the label (and box). Booked as Shipping.
+              The label eBay took from your payout. Booked as Shipping.
             </small>
           </label>
 
@@ -191,13 +191,6 @@ export default function CloseOrderForm({ order }: { order: Order }) {
             />
           </label>
         </div>
-
-        {looksLikeLabelSubtracted && (
-          <p className="m-0 text-[13px] rounded-md bg-amber-50 border border-amber-200 text-amber-900 p-2.5">
-            eBay kept {formatMoney(deducted)}, much more than the fees of about {formatMoney(fees)}. If this
-            amount is already after the shipping label, add the label to it, so VAT and fees stay correct.
-          </p>
-        )}
 
         <div className="grid gap-1 text-[13px]">
           <span className="text-[11px] uppercase text-muted font-bold">Posted to Accounts</span>
