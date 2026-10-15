@@ -9,6 +9,33 @@ import { formatMoney } from '@/lib/format';
 import type { AccountTx, Settings } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 
+const TYPE_PRESETS = [
+  'Sale',
+  'Purchase',
+  'Refund',
+  'Return',
+  'Fees',
+  'Fee VAT',
+  'Shipping',
+  'Adjustment',
+  'Expense',
+  'Other'
+];
+
+const CATEGORY_PRESETS = [
+  'eBay Sales',
+  'Inventory',
+  'Returns',
+  'Packing Material',
+  'Shipping',
+  'Fees',
+  'Advertising',
+  'Software',
+  'Office',
+  'Taxes',
+  'Other'
+];
+
 type FormState = {
   txDate: string;
   type: string;
@@ -31,6 +58,19 @@ function initialState(tx?: AccountTx, defaultVatRate?: number): FormState {
   };
 }
 
+function mergeOptions(presets: string[], saved: (string | null)[]) {
+  const seen = new Set(presets.map((option) => option.toLowerCase()));
+  const extra: string[] = [];
+  for (const value of saved) {
+    const trimmed = value?.trim();
+    if (trimmed && !seen.has(trimmed.toLowerCase())) {
+      seen.add(trimmed.toLowerCase());
+      extra.push(trimmed);
+    }
+  }
+  return [...presets, ...extra.sort((a, b) => a.localeCompare(b))];
+}
+
 function num(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -45,6 +85,21 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
   const [form, setForm] = useState<FormState>(() => initialState(tx));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [typeOptions, setTypeOptions] = useState<string[]>(TYPE_PRESETS);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(CATEGORY_PRESETS);
+
+  // Every type or category ever saved joins the presets, so new ones appear in the list by themselves.
+  useEffect(() => {
+    supabase
+      .from('accounts')
+      .select('type, category')
+      .then(({ data }) => {
+        const rows = (data || []) as { type: string | null; category: string | null }[];
+        setTypeOptions(mergeOptions(TYPE_PRESETS, rows.map((row) => row.type)));
+        setCategoryOptions(mergeOptions(CATEGORY_PRESETS, rows.map((row) => row.category)));
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchSettings(supabase).then((loaded) => {
@@ -134,10 +189,16 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
           <input
             className="field-input"
             required
-            placeholder="Sale, Purchase, Refund, Fee..."
+            list="typeOptions"
+            placeholder="Select or type a type"
             value={form.type}
             onChange={(e) => setField('type', e.target.value)}
           />
+          <datalist id="typeOptions">
+            {typeOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
         </label>
 
         <label className="field-label">
@@ -145,10 +206,16 @@ export default function AccountsForm({ tx }: { tx?: AccountTx }) {
           <input
             className="field-input"
             required
-            placeholder="eBay Sales, Inventory, Returns..."
+            list="categoryOptions"
+            placeholder="Select or type a category"
             value={form.category}
             onChange={(e) => setField('category', e.target.value)}
           />
+          <datalist id="categoryOptions">
+            {categoryOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
         </label>
 
         <label className="field-label">
