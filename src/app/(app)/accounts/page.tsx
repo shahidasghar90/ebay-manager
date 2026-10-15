@@ -23,9 +23,14 @@ export default async function AccountsPage() {
         title="Accounts"
         subtitle="Income and expense ledger"
         actions={
-          <Link href="/accounts/new" className="btn-primary">
-            + Add Transaction
-          </Link>
+          <>
+            <Link href="/accounts/dashboard" className="btn-secondary">
+              Head Wise
+            </Link>
+            <Link href="/accounts/new" className="btn-primary">
+              + Add Transaction
+            </Link>
+          </>
         }
       />
 
