@@ -10,12 +10,12 @@ import type { FulfillmentModel, Product } from '@/lib/types';
 import { notifyTeam } from '@/lib/notify';
 import { RecordAuthorCell } from '@/components/RecordAuthor';
 
-// "All" deliberately leaves out Archived: archived products only live in their own tab.
+// "All" deliberately leaves out Archived and Research: those only live in their own tabs.
 const STATUS_TABS = ['All', 'Active', 'Research', 'Paused', 'Out of Stock', 'Archived'] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
 function inTab(product: Product, tab: StatusTab) {
-  if (tab === 'All') return product.product_status !== 'Archived';
+  if (tab === 'All') return product.product_status !== 'Archived' && product.product_status !== 'Research';
   return product.product_status === tab;
 }
 
