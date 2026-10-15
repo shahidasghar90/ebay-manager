@@ -1,21 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatMoney, statusClassName } from '@/lib/format';
 import { summarizeCompetitorPrices } from '@/lib/competitorStats';
 import type { ResearchItem } from '@/lib/types';
 import { RecordAuthorCell, RecordAuthorShort } from '@/components/RecordAuthor';
 
-export default function ResearchTable({ items }: { items: ResearchItem[] }) {
+type Tab = 'Research' | 'Archive';
+
+export default function ResearchTable({ items: allItems }: { items: ResearchItem[] }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>('Research');
+
+  // Converted ideas already became products, so they live in the Archive tab only.
+  const { open, archived } = useMemo(
+    () => ({
+      open: allItems.filter((item) => item.research_status !== 'Converted'),
+      archived: allItems.filter((item) => item.research_status === 'Converted')
+    }),
+    [allItems]
+  );
+  const items = tab === 'Archive' ? archived : open;
+
+  const tabs = (
+    <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+      {(['Research', 'Archive'] as const).map((name) => (
+        <button
+          key={name}
+          type="button"
+          onClick={() => setTab(name)}
+          className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${
+            tab === name ? 'bg-blue text-white border-blue' : 'bg-white text-muted border-border'
+          }`}
+        >
+          {name} ({name === 'Archive' ? archived.length : open.length})
+        </button>
+      ))}
+    </div>
+  );
 
   if (items.length === 0) {
-    return <div className="card p-6 text-center text-muted">No research records yet.</div>;
+    return (
+      <div>
+        {tabs}
+        <div className="card p-6 text-center text-muted">
+          {tab === 'Archive' ? 'No converted research yet.' : 'No research records yet.'}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
+      {tabs}
       {/* Phones: one compact card per research idea. */}
       <ul className="md:hidden grid gap-2.5">
         {items.map((item) => {
@@ -68,9 +106,11 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                     <Link href={`/research/${item.id}`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
                       Edit
                     </Link>
-                    <Link href={`/products/new?researchId=${item.id}`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
-                      Convert
-                    </Link>
+                    {tab !== 'Archive' && (
+                      <Link href={`/products/new?researchId=${item.id}`} className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue">
+                        Convert
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -148,13 +188,15 @@ export default function ResearchTable({ items }: { items: ResearchItem[] }) {
                       >
                         Edit
                       </Link>
-                      <Link
-                        href={`/products/new?researchId=${item.id}`}
-                        className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
-                        title="Convert to Product"
-                      >
-                        Convert
-                      </Link>
+                      {tab !== 'Archive' && (
+                        <Link
+                          href={`/products/new?researchId=${item.id}`}
+                          className="text-xs font-bold border border-border rounded px-2.5 py-1.5 hover:border-blue hover:text-blue"
+                          title="Convert to Product"
+                        >
+                          Convert
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>
